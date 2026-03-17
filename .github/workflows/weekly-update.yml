@@ -1,0 +1,55 @@
+name: Weekly Dashboard Update
+
+on:
+  schedule:
+    # Run every Monday at 7AM UTC (2AM EST / 3AM EDT)
+    - cron: '0 7 * * 1'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  update-dashboard:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install scraper dependencies
+        working-directory: ./scraper
+        run: npm ci
+
+      - name: Install Puppeteer browser
+        working-directory: ./scraper
+        run: npx puppeteer browsers install chrome
+
+      - name: Run scraper
+        working-directory: ./scraper
+        env:
+          TOPLINE_EMAIL: ${{ secrets.TOPLINE_EMAIL }}
+          TOPLINE_PASSWORD: ${{ secrets.TOPLINE_PASSWORD }}
+        run: node scrape-topline.js
+
+      - name: Install dashboard dependencies
+        working-directory: ./dashboard
+        run: npm ci
+
+      - name: Build dashboard
+        working-directory: ./dashboard
+        run: npm run build
+
+      - name: Deploy to Vercel
+        working-directory: ./dashboard
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          npm i -g vercel
+          vercel pull --yes --environment=production --token=$VERCEL_TOKEN
+          vercel build --prod --token=$VERCEL_TOKEN
+          vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN

@@ -7,8 +7,37 @@ require("dotenv").config();
 const TOPLINE_EMAIL = process.env.TOPLINE_EMAIL;
 const TOPLINE_PASSWORD = process.env.TOPLINE_PASSWORD;
 const EXPORT_URL = "https://topline.futurimedia.com/admin/reports";
+const STATS_URL = "https://topline.futurimedia.com/admin/research/stats";
 const DOWNLOAD_DIR = path.resolve(__dirname, "downloads");
 const OUTPUT_DIR = path.resolve(__dirname, "../dashboard/public/data");
+
+// Analysts for Pull 2 - exact dropdown names
+const RADIO_ANALYSTS = [
+  "Adam Town",
+  "Alison D'Alessandro",
+  "Amanda Grondolsky",
+  "Anthony Alford",
+  "Carly Brabander",
+  "Cheryl Kanak",
+  "Jenn Hoskins",
+  "Jordan Frank",
+  "Kyle Cornell",
+  "Marina Nasonti",
+  "Steve Nichols",
+  "Terry Groden",
+];
+
+const TV_ANALYSTS = [
+  "Damaris Parker",
+  "Hayley Mitchell",
+  "Jeff Suss",
+  "Marta Barone",
+  "Meghan Spezialetti",
+  "Nicole Chisholm",
+  "Rose Eppich",
+];
+
+const ALL_ANALYSTS = [...RADIO_ANALYSTS, ...TV_ANALYSTS];
 
 // Table 1: Weekly Research Stats - mapping from CSV labels
 const RESEARCH_STATS_LABELS = [
@@ -243,6 +272,294 @@ async function downloadWeekData(page, client, week, filesBefore, isFirstDownload
   return csvPath;
 }
 
+// --- Pull 2: Per-Analyst Stats Scraper ---
+
+async function scrapeAnalystStats(page, weeks) {
+  console.log("\n\n=== PULL 2: Per-Analyst Stats ===");
+  console.log(`Scraping ${ALL_ANALYSTS.length} analysts × ${weeks.length} weeks = ${ALL_ANALYSTS.length * weeks.length} pulls\n`);
+
+  const analystUtilization = {};
+
+  // Initialize structure for all analysts
+  ALL_ANALYSTS.forEach(fullName => {
+    // Extract first name for matching with dashboard
+    const firstName = fullName.split(" ")[0];
+    analystUtilization[firstName] = {
+      fullName,
+      team: RADIO_ANALYSTS.includes(fullName) ? "radio" : "tv",
+      weekly: weeks.map(() => ({
+        totalRequests: 0,
+        totalReports: 0,
+        totalDesigns: 0,
+        avgRequestTime: 0,
+        avgReportTime: 0,
+        avgDesignTime: 0,
+      })),
+    };
+  });
+
+  // Navigate to stats page
+  console.log("Navigating to Research Stats page...");
+  await page.goto(STATS_URL, { waitUntil: "networkidle2", timeout: 30000 });
+  await new Promise(r => setTimeout(r, 1000));
+
+  // Set Date Type to 'Delivered' (for Insights/Design Delivered)
+  console.log("Setting Date Type to 'Delivered'...");
+  const dateTypeSet = await page.evaluate(() => {
+    const selects = document.querySelectorAll("select");
+    for (const select of selects) {
+      const options = [...select.options];
+      // Look for "Delivered" option in the Date Type dropdown
+      const deliveredOption = options.find(opt =>
+        opt.text.toLowerCase().includes("delivered")
+      );
+      if (deliveredOption) {
+        select.value = deliveredOption.value;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+        return { found: true, text: deliveredOption.text };
+      }
+    }
+    return { found: false };
+  });
+  console.log(`Date Type set: ${dateTypeSet.found ? dateTypeSet.text : "NOT FOUND"}`);
+
+  await new Promise(r => setTimeout(r, 500));
+
+  let isFirstSearch = true;
+
+  // Loop through each analyst and each week
+  for (const fullName of ALL_ANALYSTS) {
+    const firstName = fullName.split(" ")[0];
+    console.log(`\n--- Analyst: ${fullName} ---`);
+
+    for (let weekIdx = 0; weekIdx < weeks.length; weekIdx++) {
+      const week = weeks[weekIdx];
+      const fromValue = formatDateForInput(week.start);
+      const toValue = formatDateForInput(week.end);
+
+      console.log(`  Week ${weekIdx + 1}: ${week.label}`);
+
+      // Set date range
+      await page.evaluate(({ startDate, endDate }) => {
+        const inputs = document.querySelectorAll('input[type="date"]');
+        if (inputs[0]) {
+          inputs[0].value = startDate;
+          inputs[0].dispatchEvent(new Event("input", { bubbles: true }));
+          inputs[0].dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        if (inputs[1]) {
+          inputs[1].value = endDate;
+          inputs[1].dispatchEvent(new Event("input", { bubbles: true }));
+          inputs[1].dispatchEvent(new Event("change", { bubbles: true }));
+        }
+      }, { startDate: fromValue, endDate: toValue });
+
+      await new Promise(r => setTimeout(r, 300));
+
+      // First clear any existing analyst selections
+      await page.evaluate(() => {
+        // Click any X buttons to clear existing selections
+        const closeButtons = document.querySelectorAll('[class*="multiValue"] [class*="remove"], .react-select__multi-value__remove, [aria-label="Remove"]');
+        closeButtons.forEach(btn => btn.click());
+      });
+      await new Promise(r => setTimeout(r, 200));
+
+      // Select analyst - try multiple methods
+      const analystSelected = await page.evaluate((analystName) => {
+        // Method 1: Try regular select
+        const selects = document.querySelectorAll("select");
+        for (const select of selects) {
+          const options = [...select.options];
+          const analystOption = options.find(opt =>
+            opt.text.trim() === analystName || opt.text.includes(analystName)
+          );
+          // Skip Date Type and Research Type dropdowns
+          if (analystOption &&
+              !analystOption.text.toLowerCase().includes("submitted") &&
+              !analystOption.text.toLowerCase().includes("delivered") &&
+              !analystOption.text.toLowerCase().includes("insights")) {
+            select.value = analystOption.value;
+            select.dispatchEvent(new Event("change", { bubbles: true }));
+            return { found: true, method: "select", text: analystOption.text };
+          }
+        }
+
+        // Method 2: Try clicking on the Analysts input to open dropdown
+        const labels = document.querySelectorAll("label, td, th");
+        for (const label of labels) {
+          if (label.textContent.toLowerCase().includes("analyst")) {
+            // Find the closest input or select-like element
+            const container = label.closest("tr") || label.parentElement;
+            const input = container.querySelector("input[type='text'], [class*='select'], [class*='Select']");
+            if (input) {
+              input.click();
+              return { found: true, method: "click", needsType: true };
+            }
+          }
+        }
+
+        return { found: false };
+      }, fullName);
+
+      // If we need to type the analyst name
+      if (analystSelected.needsType) {
+        await page.keyboard.type(fullName);
+        await new Promise(r => setTimeout(r, 300));
+        await page.keyboard.press("Enter");
+        await new Promise(r => setTimeout(r, 200));
+      }
+
+      if (!analystSelected.found) {
+        console.log(`    WARNING: Could not find analyst "${fullName}" in dropdown`);
+        // Take debug screenshot
+        const debugPath = path.join(DOWNLOAD_DIR, `debug-analyst-${firstName}.png`);
+        await page.screenshot({ path: debugPath });
+        continue;
+      }
+
+      await new Promise(r => setTimeout(r, 300));
+
+      // Click Search button
+      await page.evaluate(() => {
+        const buttons = [...document.querySelectorAll("button, input[type='submit']")];
+        const searchBtn = buttons.find(btn =>
+          btn.textContent?.toLowerCase().includes("search") ||
+          btn.value?.toLowerCase().includes("search")
+        );
+        if (searchBtn) searchBtn.click();
+      });
+
+      await new Promise(r => setTimeout(r, 2000));
+
+      // Take screenshot on first search for verification
+      if (isFirstSearch) {
+        const screenshotPath = path.join(DOWNLOAD_DIR, "first-analyst-search.png");
+        await page.screenshot({ path: screenshotPath, fullPage: true });
+        console.log(`\n>>> Verification screenshot saved: ${screenshotPath}\n`);
+        isFirstSearch = false;
+      }
+
+      // Scrape the summary row from the stats table
+      const summaryData = await page.evaluate(() => {
+        // Find the table with summary stats - it has headers like "Total Requests", "Total Reports", etc.
+        const tables = document.querySelectorAll("table");
+
+        for (const table of tables) {
+          const headerRow = table.querySelector("tr");
+          if (!headerRow) continue;
+
+          const headers = [...headerRow.querySelectorAll("th, td")].map(h => h.textContent.trim().toLowerCase());
+
+          // Check if this is the summary stats table
+          if (headers.some(h => h.includes("total requests")) || headers.some(h => h.includes("total reports"))) {
+            // Find the data row (usually the second row)
+            const rows = table.querySelectorAll("tr");
+            if (rows.length >= 2) {
+              const dataRow = rows[1];
+              const cells = [...dataRow.querySelectorAll("td")];
+
+              // Map headers to values
+              const result = {
+                totalRequests: 0,
+                avgRequestTime: "",
+                totalReports: 0,
+                avgReportTime: "",
+                totalDesigns: 0,
+                avgDesignTime: "",
+              };
+
+              headers.forEach((header, idx) => {
+                const cellText = cells[idx]?.textContent.trim() || "";
+
+                if (header.includes("total requests")) {
+                  result.totalRequests = parseInt(cellText) || 0;
+                } else if (header.includes("average request") || header.includes("avg request")) {
+                  result.avgRequestTime = cellText;
+                } else if (header.includes("total reports")) {
+                  result.totalReports = parseInt(cellText) || 0;
+                } else if (header.includes("average report") || header.includes("avg report")) {
+                  result.avgReportTime = cellText;
+                } else if (header.includes("total designs")) {
+                  result.totalDesigns = parseInt(cellText) || 0;
+                } else if (header.includes("average design") || header.includes("avg design")) {
+                  result.avgDesignTime = cellText;
+                }
+              });
+
+              return { found: true, ...result };
+            }
+          }
+        }
+
+        return { found: false };
+      });
+
+      // Parse time strings like "4 hours, 13 minutes 32 seconds" or "16 minutes 54 seconds" to minutes
+      const parseTimeToMinutes = (timeStr) => {
+        if (!timeStr || timeStr === "0") return 0;
+
+        let totalMinutes = 0;
+        const hourMatch = timeStr.match(/(\d+)\s*hour/i);
+        const minMatch = timeStr.match(/(\d+)\s*minute/i);
+        const secMatch = timeStr.match(/(\d+)\s*second/i);
+
+        if (hourMatch) totalMinutes += parseInt(hourMatch[1]) * 60;
+        if (minMatch) totalMinutes += parseInt(minMatch[1]);
+        if (secMatch) totalMinutes += parseInt(secMatch[1]) / 60;
+
+        return Math.round(totalMinutes * 10) / 10; // Round to 1 decimal
+      };
+
+      // Parse the summary data
+      let weekData = {
+        totalRequests: 0,
+        totalReports: 0,
+        totalDesigns: 0,
+        avgRequestTime: 0,
+        avgReportTime: 0,
+        avgDesignTime: 0,
+      };
+
+      if (summaryData.found) {
+        weekData.totalRequests = summaryData.totalRequests || 0;
+        weekData.totalReports = summaryData.totalReports || 0;
+        weekData.totalDesigns = summaryData.totalDesigns || 0;
+        weekData.avgRequestTime = parseTimeToMinutes(summaryData.avgRequestTime);
+        weekData.avgReportTime = parseTimeToMinutes(summaryData.avgReportTime);
+        weekData.avgDesignTime = parseTimeToMinutes(summaryData.avgDesignTime);
+      }
+
+      analystUtilization[firstName].weekly[weekIdx] = weekData;
+      console.log(`    Req: ${weekData.totalRequests}, Reports: ${weekData.totalReports}, Designs: ${weekData.totalDesigns}, AvgReqTime: ${weekData.avgRequestTime}min, AvgReportTime: ${weekData.avgReportTime}min`);
+
+      // Clear analyst filter for next iteration - click the X on the tag
+      await page.evaluate(() => {
+        // Find and click the X button next to the analyst name tag
+        const removeButtons = document.querySelectorAll('[class*="remove"], [aria-label*="Remove"], .close, .btn-close');
+        removeButtons.forEach(btn => {
+          // Only click if it's in the Analysts section
+          const parent = btn.closest('tr, div');
+          if (parent && parent.textContent.includes('Analyst')) {
+            btn.click();
+          }
+        });
+
+        // Also try clicking the × character directly
+        const spans = document.querySelectorAll('span');
+        spans.forEach(span => {
+          if (span.textContent.trim() === '×' || span.textContent.trim() === 'x') {
+            span.click();
+          }
+        });
+      });
+
+      await new Promise(r => setTimeout(r, 300));
+    }
+  }
+
+  return analystUtilization;
+}
+
 // --- Main Scraper ---
 
 async function run() {
@@ -457,6 +774,10 @@ async function run() {
       }
     });
 
+    // ========== PULL 2: Per-Analyst Utilization Stats ==========
+    const analystUtilization = await scrapeAnalystStats(page, weeks);
+    stats.utilization = analystUtilization;
+
     // Save JSON
     const outputPath = path.join(OUTPUT_DIR, "topline-stats.json");
     fs.writeFileSync(outputPath, JSON.stringify(stats, null, 2));
@@ -482,6 +803,26 @@ async function run() {
       const data = stats.analystStats[name];
       const wow = data.weekOverWeek !== null ? `${data.weekOverWeek}%` : "N/A";
       console.log(`${name.padEnd(20)}: ${data.reportsCompleted.map(n => String(n).padStart(5)).join("")} | Avg: ${String(data.fourWeekAvg).padStart(4)} | WoW: ${wow}`);
+    });
+
+    console.log("\n--- Pull 2: Utilization by Analyst (Most Recent Week) ---");
+    console.log("\nRadio Team:");
+    RADIO_ANALYSTS.forEach(fullName => {
+      const firstName = fullName.split(" ")[0];
+      const data = stats.utilization[firstName];
+      if (data) {
+        const week = data.weekly[3];
+        console.log(`  ${firstName.padEnd(12)}: Req=${week.totalRequests}, Reports=${week.totalReports}, Designs=${week.totalDesigns}`);
+      }
+    });
+    console.log("\nTV Team:");
+    TV_ANALYSTS.forEach(fullName => {
+      const firstName = fullName.split(" ")[0];
+      const data = stats.utilization[firstName];
+      if (data) {
+        const week = data.weekly[3];
+        console.log(`  ${firstName.padEnd(12)}: Req=${week.totalRequests}, Reports=${week.totalReports}, Designs=${week.totalDesigns}`);
+      }
     });
 
   } catch (err) {

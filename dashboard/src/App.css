@@ -6,7 +6,103 @@
 
 header {
   padding: 24px 32px;
+  border-bottom: none;
+}
+
+/* Tab Navigation */
+.tab-nav {
+  display: flex;
+  gap: 8px;
+  padding: 0 32px 16px;
   border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.tab-pill {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.tab-pill:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+
+.tab-pill.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+/* Section header with toggle */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.section-header h2 {
+  margin: 0;
+}
+
+/* Toggle switch */
+.toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.toggle-container span {
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.toggle-container span.active {
+  opacity: 1;
+  font-weight: 500;
+  color: var(--accent);
+}
+
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--border);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.toggle-switch.toggled {
+  background: var(--accent);
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.toggle-switch.toggled .toggle-slider {
+  transform: translateX(20px);
 }
 
 header h1 {
@@ -169,6 +265,33 @@ footer {
 
 .error {
   color: #dc2626;
+}
+
+/* Sub-table titles */
+.sub-table-title {
+  margin: 24px 0 12px;
+  font-size: 16px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.sub-table-title:first-of-type {
+  margin-top: 0;
+}
+
+/* Utilization table styles */
+.utilization-table {
+  font-size: 12px;
+}
+
+.utilization-table th,
+.utilization-table td {
+  padding: 8px 6px;
+  min-width: 40px;
+}
+
+.utilization-table .analyst-col {
+  min-width: 80px;
 }
 
 /* Analyst table styles */
