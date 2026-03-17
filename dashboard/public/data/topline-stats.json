@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-17T13:23:52.368Z",
+  "generatedAt": "2026-03-17T13:46:20.461Z",
   "weeks": [
     "02/16/2026 - 02/22/2026",
     "02/23/2026 - 03/01/2026",
@@ -14,7 +14,7 @@
         9763,
         9105
       ],
-      "fourWeekAvg": 8445.3,
+      "fourWeekAvg": 8445,
       "weekOverWeek": -7
     },
     "DIGITAL ANALYSIS": {
@@ -24,7 +24,7 @@
         446,
         341
       ],
-      "fourWeekAvg": 402.5,
+      "fourWeekAvg": 403,
       "weekOverWeek": -24
     },
     "DIGITAL INTELLIGENCE": {
@@ -34,7 +34,7 @@
         359,
         239
       ],
-      "fourWeekAvg": 299.3,
+      "fourWeekAvg": 299,
       "weekOverWeek": -33
     },
     "MAPIT": {
@@ -44,18 +44,18 @@
         367,
         250
       ],
-      "fourWeekAvg": 306.5,
+      "fourWeekAvg": 307,
       "weekOverWeek": -32
     },
     "INSIGHTS": {
       "weekly": [
-        0,
-        0,
-        1,
-        0
+        10,
+        21,
+        18,
+        20
       ],
-      "fourWeekAvg": 0.3,
-      "weekOverWeek": -100
+      "fourWeekAvg": 17,
+      "weekOverWeek": 11
     },
     "INFOGRAPHICS": {
       "weekly": [
@@ -64,7 +64,7 @@
         42,
         52
       ],
-      "fourWeekAvg": 40.5,
+      "fourWeekAvg": 41,
       "weekOverWeek": 24
     },
     "PRESENTATIONS": {
@@ -74,7 +74,7 @@
         984,
         862
       ],
-      "fourWeekAvg": 944.5,
+      "fourWeekAvg": 945,
       "weekOverWeek": -12
     },
     "SNAPSHOTS": {
@@ -99,12 +99,12 @@
     },
     "TOTAL SENT TO DESIGN": {
       "weekly": [
-        8754,
-        10352,
-        12081,
-        10956
+        8764,
+        10373,
+        12098,
+        10976
       ],
-      "fourWeekAvg": 10535.8,
+      "fourWeekAvg": 10553,
       "weekOverWeek": -9
     }
   }

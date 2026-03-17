@@ -32,7 +32,10 @@ const EXCLUDED = ["ai"];
 const COL_DELIVERABLE = "Deliverable";
 const COL_NEW_STATUS = "New Status";
 const COL_TIMESTAMP = "Timestamp Of This Change (UTC)";
-const STATUS_DELIVERED = "Designs Delivered";
+
+// Valid "delivered" statuses
+const STATUS_DESIGNS_DELIVERED = "Designs Delivered";
+const STATUS_INSIGHTS_DELIVERED = "Insights Delivered";
 
 // --- Date Utilities ---
 
@@ -181,9 +184,12 @@ function processData(rows, weeks) {
     const timestamp = row[COL_TIMESTAMP];
     const deliverable = row[COL_DELIVERABLE];
 
-    // Only count rows where status is "Designs Delivered"
+    // Only count rows where status indicates delivery
     const normalizedStatus = normalizeValue(status || "");
-    if (normalizedStatus !== normalizeValue(STATUS_DELIVERED)) return;
+    const isDesignsDelivered = normalizedStatus === normalizeValue(STATUS_DESIGNS_DELIVERED);
+    const isInsightsDelivered = normalizedStatus === normalizeValue(STATUS_INSIGHTS_DELIVERED);
+
+    if (!isDesignsDelivered && !isInsightsDelivered) return;
 
     deliveredRows++;
 
@@ -193,6 +199,11 @@ function processData(rows, weeks) {
 
     const category = categorizeDeliverable(deliverable);
     if (!category) return;
+
+    // INSIGHTS category uses "Insights Delivered" status
+    // All other categories use "Designs Delivered" status
+    if (category === "INSIGHTS" && !isInsightsDelivered) return;
+    if (category !== "INSIGHTS" && !isDesignsDelivered) return;
 
     matchedRows++;
 
@@ -215,7 +226,7 @@ function processData(rows, weeks) {
   categories.forEach(cat => {
     const weekly = stats.categories[cat].weekly;
     const sum = weekly.reduce((a, b) => a + b, 0);
-    stats.categories[cat].fourWeekAvg = Math.round((sum / 4) * 10) / 10;
+    stats.categories[cat].fourWeekAvg = Math.round(sum / 4);
 
     // Week over week change (comparing last week to previous week)
     const lastWeek = weekly[3];
