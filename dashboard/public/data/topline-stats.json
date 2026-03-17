@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-17T14:11:00.076Z",
+  "generatedAt": "2026-03-17T17:35:21.585Z",
   "weeks": [
     "02/16/2026 - 02/22/2026",
     "02/23/2026 - 03/01/2026",
@@ -9,103 +9,103 @@
   "categories": {
     "PERSONALITY": {
       "weekly": [
-        6954,
-        8048,
-        9831,
-        9160
+        6959,
+        8075,
+        9742,
+        9196
       ],
-      "fourWeekAvg": 8498,
-      "weekOverWeek": -7
+      "fourWeekAvg": 8493,
+      "weekOverWeek": -6
     },
     "DIGITAL ANALYSIS": {
       "weekly": [
-        367,
-        461,
-        436,
-        331
+        345,
+        435,
+        416,
+        330
       ],
-      "fourWeekAvg": 399,
-      "weekOverWeek": -24
+      "fourWeekAvg": 382,
+      "weekOverWeek": -21
     },
     "DIGITAL INTELLIGENCE": {
       "weekly": [
-        252,
-        348,
-        359,
-        247
+        230,
+        321,
+        328,
+        224
       ],
-      "fourWeekAvg": 302,
-      "weekOverWeek": -31
+      "fourWeekAvg": 276,
+      "weekOverWeek": -32
     },
     "MAPIT": {
       "weekly": [
-        248,
-        356,
-        366,
-        258
+        227,
+        334,
+        336,
+        234
       ],
-      "fourWeekAvg": 307,
+      "fourWeekAvg": 283,
       "weekOverWeek": -30
     },
     "INSIGHTS": {
       "weekly": [
-        10,
+        15,
+        20,
         18,
-        18,
-        15
+        20
       ],
-      "fourWeekAvg": 15,
-      "weekOverWeek": -17
+      "fourWeekAvg": 18,
+      "weekOverWeek": 11
     },
     "INFOGRAPHICS": {
       "weekly": [
-        36,
-        11,
-        23,
-        31
+        59,
+        34,
+        42,
+        52
       ],
-      "fourWeekAvg": 25,
-      "weekOverWeek": 35
+      "fourWeekAvg": 47,
+      "weekOverWeek": 24
     },
     "PRESENTATIONS": {
       "weekly": [
-        907,
-        1020,
-        947,
-        807
+        948,
+        1059,
+        1003,
+        890
       ],
-      "fourWeekAvg": 920,
-      "weekOverWeek": -15
+      "fourWeekAvg": 975,
+      "weekOverWeek": -11
     },
     "SNAPSHOTS": {
       "weekly": [
-        27,
-        54,
-        44,
-        65
+        35,
+        88,
+        66,
+        79
       ],
-      "fourWeekAvg": 48,
-      "weekOverWeek": 48
+      "fourWeekAvg": 67,
+      "weekOverWeek": 20
     },
     "RESOURCES": {
       "weekly": [
-        45,
-        73,
-        77,
-        64
+        128,
+        128,
+        140,
+        114
       ],
-      "fourWeekAvg": 65,
-      "weekOverWeek": -17
+      "fourWeekAvg": 128,
+      "weekOverWeek": -19
     },
     "TOTAL SENT TO DESIGN": {
       "weekly": [
-        8846,
-        10389,
-        12101,
-        10978
+        8946,
+        10494,
+        12091,
+        11139
       ],
-      "fourWeekAvg": 10579,
-      "weekOverWeek": -9
+      "fourWeekAvg": 10668,
+      "weekOverWeek": -8
     }
   }
 }

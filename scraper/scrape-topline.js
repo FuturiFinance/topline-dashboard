@@ -6,37 +6,22 @@ require("dotenv").config();
 // --- Configuration ---
 const TOPLINE_EMAIL = process.env.TOPLINE_EMAIL;
 const TOPLINE_PASSWORD = process.env.TOPLINE_PASSWORD;
-const EXPORT_URL = "https://topline.futurimedia.com/admin/research/status_logs_export";
+const EXPORT_URL = "https://topline.futurimedia.com/admin/reports";
 const DOWNLOAD_DIR = path.resolve(__dirname, "downloads");
 const OUTPUT_DIR = path.resolve(__dirname, "../dashboard/public/data");
 
-// Deliverable category mappings (normalized - will strip quotes and lowercase for matching)
-const CATEGORY_MAP = {
-  "topline personality prep": "PERSONALITY",
-  "digital analysis": "DIGITAL ANALYSIS",
-  "digital intelligence": "DIGITAL INTELLIGENCE",
-  "mapit": "MAPIT",
-  "insights": "INSIGHTS",
-  "infographic": "INFOGRAPHICS",
-  "presentation": "PRESENTATIONS",
-  "snapshot": "SNAPSHOTS",
-  "one-sheet": "SNAPSHOTS",
+// Mapping from CSV labels to our dashboard categories
+const CATEGORY_LABELS = {
+  "PERSONALITY completed": "PERSONALITY",
+  "DIGITAL ANALYSIS completed": "DIGITAL ANALYSIS",
+  "DIGITAL INTELLIGENCE completed": "DIGITAL INTELLIGENCE",
+  "MAPIT delivered": "MAPIT",
+  "INSIGHTS delivered": "INSIGHTS",
+  "INFOGRAPHICS delivered": "INFOGRAPHICS",
+  "PRESENTATIONS delivered": "PRESENTATIONS",
+  "SNAPSHOTS delivered": "SNAPSHOTS",
+  "RESOURCES delivered": "RESOURCES",
 };
-
-// Resource types are combined (starts with Resource_)
-const RESOURCE_PATTERN = /^resource_/i;
-
-// Excluded deliverables
-const EXCLUDED = ["ai"];
-
-// CSV column names (as they appear in the export)
-const COL_DELIVERABLE = "Deliverable";
-const COL_NEW_STATUS = "New Status";
-const COL_TIMESTAMP = "Timestamp Of This Change (UTC)";
-
-// Valid "delivered" statuses
-const STATUS_DESIGNS_DELIVERED = "Designs Delivered";
-const STATUS_INSIGHTS_DELIVERED = "Insights Delivered";
 
 // --- Date Utilities ---
 
@@ -65,7 +50,6 @@ function getPrior4Weeks() {
     weekStart.setUTCDate(weekStart.getUTCDate() - (i * 7));
     weekStart.setUTCHours(0, 0, 0, 0);
 
-    // End of Sunday = start of Sunday + 23:59:59.999
     const weekEnd = new Date(weekStart);
     weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
     weekEnd.setUTCHours(23, 59, 59, 999);
@@ -88,223 +72,112 @@ function formatDateForInput(date) {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
 }
 
-// --- CSV Parsing ---
+// --- CSV Parsing for new /admin/reports format ---
 
-function parseCSV(csvText) {
+function parseReportCSV(csvText) {
   const lines = csvText.split("\n");
-  if (lines.length === 0) return [];
+  const data = {};
 
-  // Parse header
-  const header = parseCSVLine(lines[0]);
-  const rows = [];
+  for (const line of lines) {
+    // Parse each line for key-value pairs like: "PERSONALITY completed",9196
+    const match = line.match(/^"([^"]+)",(\d+)$/);
+    if (match) {
+      const label = match[1];
+      const value = parseInt(match[2], 10);
 
-  for (let i = 1; i < lines.length; i++) {
-    if (lines[i].trim() === "") continue;
-    const values = parseCSVLine(lines[i]);
-    const row = {};
-    header.forEach((col, idx) => {
-      row[col.trim()] = values[idx]?.trim() || "";
-    });
-    rows.push(row);
-  }
-
-  return rows;
-}
-
-function parseCSVLine(line) {
-  const result = [];
-  let current = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === "," && !inQuotes) {
-      result.push(current);
-      current = "";
-    } else {
-      current += char;
-    }
-  }
-  result.push(current);
-
-  return result;
-}
-
-// --- Data Processing ---
-
-function normalizeValue(val) {
-  // Remove surrounding quotes and trim
-  return val.replace(/^["']|["']$/g, "").trim().toLowerCase();
-}
-
-function categorizeDeliverable(deliverable) {
-  const normalized = normalizeValue(deliverable);
-  if (EXCLUDED.includes(normalized)) return null;
-  if (CATEGORY_MAP[normalized]) return CATEGORY_MAP[normalized];
-  if (RESOURCE_PATTERN.test(normalized)) return "RESOURCES";
-  return null; // Unknown deliverables are excluded
-}
-
-function processData(rows, weeks) {
-  // Initialize stats structure
-  const stats = {
-    generatedAt: new Date().toISOString(),
-    weeks: weeks.map(w => w.label),
-    categories: {},
-  };
-
-  const categories = [
-    "PERSONALITY",
-    "DIGITAL ANALYSIS",
-    "DIGITAL INTELLIGENCE",
-    "MAPIT",
-    "INSIGHTS",
-    "INFOGRAPHICS",
-    "PRESENTATIONS",
-    "SNAPSHOTS",
-    "RESOURCES",
-    "TOTAL SENT TO DESIGN",
-  ];
-
-  // Initialize each category with weekly counts
-  categories.forEach(cat => {
-    stats.categories[cat] = {
-      weekly: weeks.map(() => 0),
-      fourWeekAvg: 0,
-      weekOverWeek: null,
-    };
-  });
-
-  // Track unique deliverables for debugging
-  const seenDeliverables = new Set();
-  // Track processed rows to avoid duplicates (server returns overlapping date ranges)
-  const processedRows = new Set();
-  let matchedRows = 0;
-  let deliveredRows = 0;
-  let duplicateRows = 0;
-
-  // Process each row
-  rows.forEach(row => {
-    const researchId = row["Research ID"];
-    const status = row[COL_NEW_STATUS];
-    const timestamp = row[COL_TIMESTAMP];
-    const deliverable = row[COL_DELIVERABLE];
-
-    // Create unique key for deduplication
-    const rowKey = `${researchId}|${deliverable}|${timestamp}|${status}`;
-    if (processedRows.has(rowKey)) {
-      duplicateRows++;
-      return;
-    }
-    processedRows.add(rowKey);
-
-    // Only count rows where status indicates delivery
-    const normalizedStatus = normalizeValue(status || "");
-    const isDesignsDelivered = normalizedStatus === normalizeValue(STATUS_DESIGNS_DELIVERED);
-    const isInsightsDelivered = normalizedStatus === normalizeValue(STATUS_INSIGHTS_DELIVERED);
-
-    if (!isDesignsDelivered && !isInsightsDelivered) return;
-
-    deliveredRows++;
-
-    if (!timestamp || !deliverable) return;
-
-    seenDeliverables.add(deliverable);
-
-    const category = categorizeDeliverable(deliverable);
-    if (!category) return;
-
-    // INSIGHTS category uses "Insights Delivered" status
-    // All other categories use "Designs Delivered" status
-    if (category === "INSIGHTS" && !isInsightsDelivered) return;
-    if (category !== "INSIGHTS" && !isDesignsDelivered) return;
-
-    matchedRows++;
-
-    // Parse timestamp (format: "2026-03-09 00:16:06")
-    const deliveredDate = new Date(timestamp.replace(" ", "T") + "Z");
-
-    // Find which week this belongs to
-    weeks.forEach((week, weekIdx) => {
-      if (deliveredDate >= week.start && deliveredDate <= week.end) {
-        stats.categories[category].weekly[weekIdx]++;
-        stats.categories["TOTAL SENT TO DESIGN"].weekly[weekIdx]++;
+      // Check if this label maps to one of our categories
+      if (CATEGORY_LABELS[label]) {
+        data[CATEGORY_LABELS[label]] = value;
       }
-    });
-  });
-
-  console.log(`Delivered rows: ${deliveredRows}, Matched: ${matchedRows}, Duplicates skipped: ${duplicateRows}`);
-  console.log(`Unique deliverables: ${[...seenDeliverables].slice(0, 10).join(", ")}...`);
-
-  // Calculate averages and WoW change
-  categories.forEach(cat => {
-    const weekly = stats.categories[cat].weekly;
-    const sum = weekly.reduce((a, b) => a + b, 0);
-    stats.categories[cat].fourWeekAvg = Math.round(sum / 4);
-
-    // Week over week change (comparing last week to previous week)
-    const lastWeek = weekly[3];
-    const prevWeek = weekly[2];
-    if (prevWeek > 0) {
-      stats.categories[cat].weekOverWeek = Math.round(((lastWeek - prevWeek) / prevWeek) * 100);
     }
-  });
+  }
 
-  return stats;
+  return data;
 }
 
 // --- Download Helper ---
 
-async function downloadWeekData(page, client, week, filesBefore) {
+async function downloadWeekData(page, client, week, filesBefore, isFirstDownload = false) {
   console.log(`\n--- Downloading: ${week.label} ---`);
 
-  // Navigate to export page
-  await page.goto(EXPORT_URL, { waitUntil: "networkidle2", timeout: 30000 });
+  // Only navigate if this is the first download (we're already on the page after login)
+  if (!isFirstDownload) {
+    await page.goto(EXPORT_URL, { waitUntil: "networkidle2", timeout: 30000 });
+  }
 
-  // Set date range
+  // Wait for page to be ready
   await page.waitForSelector('input[type="date"]', { timeout: 10000 });
-  const dateInputs = await page.$$('input[type="date"]');
+  await new Promise(r => setTimeout(r, 500));
 
   const fromValue = formatDateForInput(week.start);
   const toValue = formatDateForInput(week.end);
 
   console.log(`Setting dates: ${fromValue} to ${toValue}`);
 
-  await dateInputs[0].evaluate((el, val) => {
-    el.value = val;
-    el.dispatchEvent(new Event("input", { bubbles: true }));
-    el.dispatchEvent(new Event("change", { bubbles: true }));
-  }, fromValue);
+  // Set dates using JavaScript - HTML5 date inputs need programmatic value setting
+  await page.evaluate(({ startDate, endDate }) => {
+    const inputs = document.querySelectorAll('input[type="date"]');
+    if (inputs[0]) {
+      inputs[0].value = startDate;
+      inputs[0].dispatchEvent(new Event("input", { bubbles: true }));
+      inputs[0].dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    if (inputs[1]) {
+      inputs[1].value = endDate;
+      inputs[1].dispatchEvent(new Event("input", { bubbles: true }));
+      inputs[1].dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }, { startDate: fromValue, endDate: toValue });
 
-  await dateInputs[1].evaluate((el, val) => {
-    el.value = val;
-    el.dispatchEvent(new Event("input", { bubbles: true }));
-    el.dispatchEvent(new Event("change", { bubbles: true }));
-  }, toValue);
+  await new Promise(r => setTimeout(r, 1000));
 
-  await new Promise(r => setTimeout(r, 500));
-
-  // Click download
-  const downloadButton = await page.evaluateHandle(() => {
-    const buttons = [...document.querySelectorAll("button, input[type='submit']")];
-    return buttons.find(el =>
-      el.textContent?.includes("Download CSV") ||
-      el.value?.includes("Download CSV")
-    );
+  // Verify dates were set
+  const setDates = await page.evaluate(() => {
+    const inputs = document.querySelectorAll('input[type="date"]');
+    return {
+      start: inputs[0]?.value,
+      end: inputs[1]?.value,
+    };
   });
+  console.log(`Dates verified: ${setDates.start} to ${setDates.end}`);
 
-  if (downloadButton && downloadButton.asElement()) {
-    await downloadButton.asElement().click();
-    console.log("Clicked Download CSV...");
-  } else {
-    throw new Error("Download CSV button not found");
+  // Find the Download button specifically (it contains "Download" text)
+  const buttonInfo = await page.evaluate(() => {
+    const buttons = [...document.querySelectorAll('button, a.btn')];
+    const downloadBtn = buttons.find(btn =>
+      btn.textContent?.toLowerCase().includes('download')
+    );
+    if (downloadBtn) {
+      return {
+        text: downloadBtn.textContent?.trim(),
+        tagName: downloadBtn.tagName,
+        href: downloadBtn.href || null,
+        outerHTML: downloadBtn.outerHTML.slice(0, 500),
+      };
+    }
+    return null;
+  });
+  console.log("Download button info:", buttonInfo);
+
+  if (!buttonInfo) {
+    throw new Error("Download button not found");
   }
 
-  // Wait for download
+  // Click download button
+  console.log("Clicking Download button...");
+  await page.evaluate(() => {
+    const buttons = [...document.querySelectorAll('button, a.btn')];
+    const downloadBtn = buttons.find(btn =>
+      btn.textContent?.toLowerCase().includes('download')
+    );
+    if (downloadBtn) downloadBtn.click();
+  });
+
+  await new Promise(r => setTimeout(r, 3000)); // Wait for download to start
+
+  // Wait for download - look for WeeklyReportData_*.csv files
   let csvFile = null;
-  const maxWait = 120000;
+  const maxWait = 60000;
   const startTime = Date.now();
 
   while (!csvFile && Date.now() - startTime < maxWait) {
@@ -324,8 +197,8 @@ async function downloadWeekData(page, client, week, filesBefore) {
   }
 
   const csvPath = path.join(DOWNLOAD_DIR, csvFile);
-  const stats = fs.statSync(csvPath);
-  console.log(`Downloaded: ${csvFile} (${(stats.size / 1024 / 1024).toFixed(2)} MB)`);
+  const fileStats = fs.statSync(csvPath);
+  console.log(`Downloaded: ${csvFile} (${(fileStats.size / 1024).toFixed(1)} KB)`);
 
   return csvPath;
 }
@@ -341,6 +214,13 @@ async function run() {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   }
 
+  // Clean up old WeeklyReportData files to avoid conflicts
+  const oldFiles = fs.readdirSync(DOWNLOAD_DIR).filter(f => f.startsWith("WeeklyReportData_"));
+  for (const file of oldFiles) {
+    fs.unlinkSync(path.join(DOWNLOAD_DIR, file));
+    console.log(`Cleaned up: ${file}`);
+  }
+
   const weeks = getPrior4Weeks();
   console.log("Fetching data for weeks:");
   weeks.forEach(w => console.log(`  ${w.label}`));
@@ -354,25 +234,17 @@ async function run() {
 
   const page = await browser.newPage();
 
-  // Configure download behavior
+  // Configure download behavior using Page-level CDP (more reliable)
   const client = await page.createCDPSession();
-  await client.send("Browser.setDownloadBehavior", {
+  await client.send("Page.setDownloadBehavior", {
     behavior: "allow",
     downloadPath: DOWNLOAD_DIR,
-    eventsEnabled: true,
   });
 
-  // Track download progress
-  client.on("Browser.downloadProgress", (event) => {
-    if (event.state === "inProgress") {
-      process.stdout.write(".");
-    } else if (event.state === "completed") {
-      console.log(" Done!");
-    }
-  });
+  console.log(`Downloads will be saved to: ${DOWNLOAD_DIR}`);
 
   try {
-    // Step 1: Navigate to export page (redirects to login)
+    // Step 1: Navigate to reports page (redirects to login)
     console.log("Navigating to login...");
     await page.goto(EXPORT_URL, { waitUntil: "networkidle2", timeout: 30000 });
 
@@ -395,21 +267,21 @@ async function run() {
 
     console.log("Logged in successfully!");
 
-    // Step 3: Download and process each week's data independently
+    // Step 3: Download each week's data
     const filesBefore = new Set(fs.readdirSync(DOWNLOAD_DIR));
 
     // Initialize stats structure
-    const stats = {
-      generatedAt: new Date().toISOString(),
-      weeks: weeks.map(w => w.label),
-      categories: {},
-    };
-
     const categories = [
       "PERSONALITY", "DIGITAL ANALYSIS", "DIGITAL INTELLIGENCE", "MAPIT",
       "INSIGHTS", "INFOGRAPHICS", "PRESENTATIONS", "SNAPSHOTS", "RESOURCES",
       "TOTAL SENT TO DESIGN",
     ];
+
+    const stats = {
+      generatedAt: new Date().toISOString(),
+      weeks: weeks.map(w => w.label),
+      categories: {},
+    };
 
     categories.forEach(cat => {
       stats.categories[cat] = {
@@ -419,53 +291,33 @@ async function run() {
       };
     });
 
-    let totalRows = 0;
-    let totalMatched = 0;
+    // Navigate to reports page once (after login redirect)
+    await page.goto(EXPORT_URL, { waitUntil: "networkidle2", timeout: 30000 });
 
+    // Download and process each week
     for (let weekIdx = 0; weekIdx < weeks.length; weekIdx++) {
       const week = weeks[weekIdx];
-      const csvPath = await downloadWeekData(page, client, week, filesBefore);
+      const isFirstDownload = weekIdx === 0;
+      const csvPath = await downloadWeekData(page, client, week, filesBefore, isFirstDownload);
 
-      // Parse rows for this week only
+      // Parse the new CSV format
       const csvContent = fs.readFileSync(csvPath, "utf-8");
-      const rows = parseCSV(csvContent);
-      console.log(`Parsed ${rows.length} rows`);
-      totalRows += rows.length;
+      const weekData = parseReportCSV(csvContent);
 
-      // Process rows for THIS week only (don't let rows cross into other weeks)
-      let weekMatched = 0;
-      rows.forEach(row => {
-        const status = row[COL_NEW_STATUS];
-        const timestamp = row[COL_TIMESTAMP];
-        const deliverable = row[COL_DELIVERABLE];
+      console.log(`Parsed values:`, weekData);
 
-        const normalizedStatus = normalizeValue(status || "");
-        const isDesignsDelivered = normalizedStatus === normalizeValue(STATUS_DESIGNS_DELIVERED);
-        const isInsightsDelivered = normalizedStatus === normalizeValue(STATUS_INSIGHTS_DELIVERED);
-
-        if (!isDesignsDelivered && !isInsightsDelivered) return;
-        if (!timestamp || !deliverable) return;
-
-        const category = categorizeDeliverable(deliverable);
-        if (!category) return;
-
-        if (category === "INSIGHTS" && !isInsightsDelivered) return;
-        if (category !== "INSIGHTS" && !isDesignsDelivered) return;
-
-        // Parse timestamp and check it falls within THIS week's boundaries
-        const deliveredDate = new Date(timestamp.replace(" ", "T") + "Z");
-        if (deliveredDate >= week.start && deliveredDate <= week.end) {
-          stats.categories[category].weekly[weekIdx]++;
-          stats.categories["TOTAL SENT TO DESIGN"].weekly[weekIdx]++;
-          weekMatched++;
+      // Store values for this week
+      let weekTotal = 0;
+      Object.entries(weekData).forEach(([category, value]) => {
+        if (stats.categories[category]) {
+          stats.categories[category].weekly[weekIdx] = value;
+          weekTotal += value;
         }
       });
 
-      console.log(`Week ${weekIdx + 1} matched: ${weekMatched} rows`);
-      totalMatched += weekMatched;
+      // Calculate total sent to design
+      stats.categories["TOTAL SENT TO DESIGN"].weekly[weekIdx] = weekTotal;
     }
-
-    console.log(`\nTotal rows: ${totalRows}, Matched: ${totalMatched}`);
 
     // Calculate averages and WoW change
     categories.forEach(cat => {
@@ -480,7 +332,7 @@ async function run() {
       }
     });
 
-    // Step 5: Save JSON
+    // Step 4: Save JSON
     const outputPath = path.join(OUTPUT_DIR, "topline-stats.json");
     fs.writeFileSync(outputPath, JSON.stringify(stats, null, 2));
     console.log(`\nOutput saved to: ${outputPath}`);
@@ -491,7 +343,7 @@ async function run() {
     console.log("");
     Object.entries(stats.categories).forEach(([cat, data]) => {
       const wow = data.weekOverWeek !== null ? `${data.weekOverWeek}%` : "N/A";
-      console.log(`${cat.padEnd(22)}: ${data.weekly.map(n => String(n).padStart(4)).join(" ")} | Avg: ${String(data.fourWeekAvg).padStart(5)} | WoW: ${wow}`);
+      console.log(`${cat.padEnd(22)}: ${data.weekly.map(n => String(n).padStart(5)).join(" ")} | Avg: ${String(data.fourWeekAvg).padStart(5)} | WoW: ${wow}`);
     });
 
   } catch (err) {
