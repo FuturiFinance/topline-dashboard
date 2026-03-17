@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Editor files
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Downloads (CSV files)
+scraper/downloads/*.csv
+
+# Debug screenshots (keep folder structure)
+scraper/downloads/*.png
+
+# Logs
+*.log
+npm-debug.log*

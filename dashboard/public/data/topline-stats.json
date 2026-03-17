@@ -1,0 +1,111 @@
+{
+  "generatedAt": "2026-03-17T13:23:52.368Z",
+  "weeks": [
+    "02/16/2026 - 02/22/2026",
+    "02/23/2026 - 03/01/2026",
+    "03/02/2026 - 03/08/2026",
+    "03/09/2026 - 03/15/2026"
+  ],
+  "categories": {
+    "PERSONALITY": {
+      "weekly": [
+        6925,
+        7988,
+        9763,
+        9105
+      ],
+      "fourWeekAvg": 8445.3,
+      "weekOverWeek": -7
+    },
+    "DIGITAL ANALYSIS": {
+      "weekly": [
+        362,
+        461,
+        446,
+        341
+      ],
+      "fourWeekAvg": 402.5,
+      "weekOverWeek": -24
+    },
+    "DIGITAL INTELLIGENCE": {
+      "weekly": [
+        252,
+        347,
+        359,
+        239
+      ],
+      "fourWeekAvg": 299.3,
+      "weekOverWeek": -33
+    },
+    "MAPIT": {
+      "weekly": [
+        248,
+        361,
+        367,
+        250
+      ],
+      "fourWeekAvg": 306.5,
+      "weekOverWeek": -32
+    },
+    "INSIGHTS": {
+      "weekly": [
+        0,
+        0,
+        1,
+        0
+      ],
+      "fourWeekAvg": 0.3,
+      "weekOverWeek": -100
+    },
+    "INFOGRAPHICS": {
+      "weekly": [
+        36,
+        32,
+        42,
+        52
+      ],
+      "fourWeekAvg": 40.5,
+      "weekOverWeek": 24
+    },
+    "PRESENTATIONS": {
+      "weekly": [
+        886,
+        1046,
+        984,
+        862
+      ],
+      "fourWeekAvg": 944.5,
+      "weekOverWeek": -12
+    },
+    "SNAPSHOTS": {
+      "weekly": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "fourWeekAvg": 0,
+      "weekOverWeek": null
+    },
+    "RESOURCES": {
+      "weekly": [
+        45,
+        117,
+        119,
+        107
+      ],
+      "fourWeekAvg": 97,
+      "weekOverWeek": -10
+    },
+    "TOTAL SENT TO DESIGN": {
+      "weekly": [
+        8754,
+        10352,
+        12081,
+        10956
+      ],
+      "fourWeekAvg": 10535.8,
+      "weekOverWeek": -9
+    }
+  }
+}

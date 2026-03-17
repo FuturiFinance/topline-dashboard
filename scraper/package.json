@@ -1,0 +1,17 @@
+{
+  "name": "topline-scraper",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "description": "Automated export and processing of TopLine Status Timeline logs",
+  "main": "scrape-topline.js",
+  "scripts": {
+    "scrape": "node scrape-topline.js",
+    "export": "node scrape-status-logs.js",
+    "export:mtd": "node scrape-status-logs.js $(date -v1d +%m/%d/%Y) $(date +%m/%d/%Y)",
+    "export:lastmonth": "node scrape-status-logs.js $(date -v1d -v-1m +%m/%d/%Y) $(date -v1d -v-1d +%m/%d/%Y)"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "puppeteer": "^24.39.1"
+  }
+}
