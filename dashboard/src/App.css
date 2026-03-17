@@ -24,6 +24,16 @@ main {
   padding: 24px 32px;
 }
 
+.table-section {
+  margin-bottom: 40px;
+}
+
+.table-section h2 {
+  margin: 0 0 16px;
+  font-size: 20px;
+  color: var(--text-h);
+}
+
 .table-container {
   overflow-x: auto;
 }
@@ -48,8 +58,14 @@ th {
 }
 
 .category-col {
-  min-width: 180px;
+  min-width: 280px;
   font-weight: 500;
+}
+
+.type-col {
+  min-width: 60px;
+  font-weight: 500;
+  color: var(--text);
 }
 
 .data-col {
@@ -96,6 +112,31 @@ tbody tr.selected {
 
 .total-row td {
   border-top: 2px solid var(--border);
+}
+
+/* Hours row styling */
+.hours-row {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.hours-row .type-col {
+  font-style: italic;
+}
+
+/* Deliverable group - first row of pair */
+.deliverable-first td {
+  border-bottom: none;
+  padding-bottom: 6px;
+}
+
+/* Deliverable group - second row of pair */
+.deliverable-second td {
+  padding-top: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.deliverable-second .category-col {
+  opacity: 0;
 }
 
 .chart-container {
@@ -149,7 +190,7 @@ footer {
   }
 
   .category-col {
-    min-width: 140px;
+    min-width: 200px;
   }
 
   .data-col {

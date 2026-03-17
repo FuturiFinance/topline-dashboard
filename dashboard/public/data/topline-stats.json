@@ -1,13 +1,53 @@
 {
-  "generatedAt": "2026-03-17T17:35:21.585Z",
+  "generatedAt": "2026-03-17T17:55:44.999Z",
   "weeks": [
     "02/16/2026 - 02/22/2026",
     "02/23/2026 - 03/01/2026",
     "03/02/2026 - 03/08/2026",
     "03/09/2026 - 03/15/2026"
   ],
-  "categories": {
-    "PERSONALITY": {
+  "researchStats": {
+    "Research Requests submitted - Analysts": {
+      "weekly": [
+        350,
+        395,
+        399,
+        395
+      ],
+      "fourWeekAvg": 385,
+      "weekOverWeek": -1
+    },
+    "Reports created - Analysts": {
+      "weekly": [
+        1065,
+        920,
+        1130,
+        1073
+      ],
+      "fourWeekAvg": 1047,
+      "weekOverWeek": -5
+    },
+    "TOTAL RESEARCH REQUESTS submitted": {
+      "weekly": [
+        9088,
+        10624,
+        12271,
+        11311
+      ],
+      "fourWeekAvg": 10824,
+      "weekOverWeek": -8
+    },
+    "TOTAL REPORTS created": {
+      "weekly": [
+        16484,
+        18329,
+        19810,
+        17699
+      ],
+      "fourWeekAvg": 18081,
+      "weekOverWeek": -11
+    },
+    "PERSONALITY completed": {
       "weekly": [
         6959,
         8075,
@@ -17,7 +57,7 @@
       "fourWeekAvg": 8493,
       "weekOverWeek": -6
     },
-    "DIGITAL ANALYSIS": {
+    "DIGITAL ANALYSIS completed": {
       "weekly": [
         345,
         435,
@@ -27,7 +67,7 @@
       "fourWeekAvg": 382,
       "weekOverWeek": -21
     },
-    "DIGITAL INTELLIGENCE": {
+    "DIGITAL INTELLIGENCE completed": {
       "weekly": [
         230,
         321,
@@ -37,7 +77,7 @@
       "fourWeekAvg": 276,
       "weekOverWeek": -32
     },
-    "MAPIT": {
+    "MAPIT delivered": {
       "weekly": [
         227,
         334,
@@ -47,7 +87,7 @@
       "fourWeekAvg": 283,
       "weekOverWeek": -30
     },
-    "INSIGHTS": {
+    "INSIGHTS delivered": {
       "weekly": [
         15,
         20,
@@ -57,7 +97,7 @@
       "fourWeekAvg": 18,
       "weekOverWeek": 11
     },
-    "INFOGRAPHICS": {
+    "INFOGRAPHICS delivered": {
       "weekly": [
         59,
         34,
@@ -67,7 +107,7 @@
       "fourWeekAvg": 47,
       "weekOverWeek": 24
     },
-    "PRESENTATIONS": {
+    "PRESENTATIONS delivered": {
       "weekly": [
         948,
         1059,
@@ -77,7 +117,7 @@
       "fourWeekAvg": 975,
       "weekOverWeek": -11
     },
-    "SNAPSHOTS": {
+    "SNAPSHOTS delivered": {
       "weekly": [
         35,
         88,
@@ -87,7 +127,7 @@
       "fourWeekAvg": 67,
       "weekOverWeek": 20
     },
-    "RESOURCES": {
+    "RESOURCES delivered": {
       "weekly": [
         128,
         128,
@@ -97,15 +137,121 @@
       "fourWeekAvg": 128,
       "weekOverWeek": -19
     },
-    "TOTAL SENT TO DESIGN": {
+    "Sent to Design": {
       "weekly": [
-        8946,
-        10494,
-        12091,
-        11139
+        302,
+        319,
+        338,
+        272
       ],
-      "fourWeekAvg": 10668,
-      "weekOverWeek": -8
+      "fourWeekAvg": 308,
+      "weekOverWeek": -20
+    }
+  },
+  "deliverables": {
+    "total": {
+      "Personality prep": {
+        "weekly": [
+          6959,
+          8075,
+          9742,
+          9196
+        ],
+        "fourWeekAvg": 8493,
+        "weekOverWeek": -6
+      },
+      "Digital Allocation": {
+        "weekly": [
+          575,
+          756,
+          744,
+          554
+        ],
+        "fourWeekAvg": 657,
+        "weekOverWeek": -26
+      },
+      "Map (A)": {
+        "weekly": [
+          11,
+          11,
+          3,
+          8
+        ],
+        "fourWeekAvg": 8,
+        "weekOverWeek": 167
+      },
+      "Map Total": {
+        "weekly": [
+          227,
+          334,
+          336,
+          234
+        ],
+        "fourWeekAvg": 283,
+        "weekOverWeek": -30
+      },
+      "Research by Analysts (Average minutes)": {
+        "weekly": [
+          1065,
+          920,
+          1130,
+          1073
+        ],
+        "fourWeekAvg": 1047,
+        "weekOverWeek": -5
+      }
+    },
+    "hours": {
+      "Personality prep": {
+        "weekly": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "fourWeekAvg": 0,
+        "weekOverWeek": null
+      },
+      "Digital Allocation": {
+        "weekly": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "fourWeekAvg": 0,
+        "weekOverWeek": null
+      },
+      "Map (A)": {
+        "weekly": [
+          1,
+          1,
+          0,
+          0.5
+        ],
+        "fourWeekAvg": 0.6,
+        "weekOverWeek": null
+      },
+      "Map Total": {
+        "weekly": [
+          1,
+          1,
+          0,
+          0.5
+        ],
+        "fourWeekAvg": 0.6,
+        "weekOverWeek": null
+      },
+      "Research by Analysts (Average minutes)": {
+        "weekly": [
+          19,
+          19,
+          17,
+          19
+        ],
+        "fourWeekAvg": 18.5,
+        "weekOverWeek": 12
+      }
     }
   }
 }

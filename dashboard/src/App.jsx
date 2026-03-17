@@ -4,7 +4,8 @@ import './App.css'
 
 function App() {
   const [stats, setStats] = useState(null)
-  const [selectedCategory, setSelectedCategory] = useState(null)
+  const [selectedMetric, setSelectedMetric] = useState(null)
+  const [selectedTable, setSelectedTable] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -28,17 +29,31 @@ function App() {
   if (error) return <div className="error">Error: {error}</div>
   if (!stats) return <div className="error">No data available</div>
 
-  const categoryOrder = [
-    'PERSONALITY',
-    'DIGITAL ANALYSIS',
-    'DIGITAL INTELLIGENCE',
-    'MAPIT',
-    'INSIGHTS',
-    'INFOGRAPHICS',
-    'PRESENTATIONS',
-    'SNAPSHOTS',
-    'RESOURCES',
-    'TOTAL SENT TO DESIGN'
+  // Table 1: Weekly Research Stats order
+  const researchStatsOrder = [
+    "Research Requests submitted - Analysts",
+    "Reports created - Analysts",
+    "TOTAL RESEARCH REQUESTS submitted",
+    "TOTAL REPORTS created",
+    "PERSONALITY completed",
+    "DIGITAL ANALYSIS completed",
+    "DIGITAL INTELLIGENCE completed",
+    "MAPIT delivered",
+    "INSIGHTS delivered",
+    "INFOGRAPHICS delivered",
+    "PRESENTATIONS delivered",
+    "SNAPSHOTS delivered",
+    "RESOURCES delivered",
+    "Sent to Design",
+  ]
+
+  // Table 2: Deliverables columns order
+  const deliverablesOrder = [
+    "Personality prep",
+    "Digital Allocation",
+    "Map (A)",
+    "Map Total",
+    "Research by Analysts (Average minutes)",
   ]
 
   const formatWoW = (value) => {
@@ -54,13 +69,36 @@ function App() {
     return ''
   }
 
-  const getChartData = (category) => {
-    const data = stats.categories[category]
+  const getChartData = (data) => {
     return stats.weeks.map((week, idx) => ({
       week: week.split(' - ')[0],
       value: data.weekly[idx]
     }))
   }
+
+  const handleRowClick = (metric, table) => {
+    if (selectedMetric === metric && selectedTable === table) {
+      setSelectedMetric(null)
+      setSelectedTable(null)
+    } else {
+      setSelectedMetric(metric)
+      setSelectedTable(table)
+    }
+  }
+
+  const getSelectedData = () => {
+    if (!selectedMetric || !selectedTable) return null
+    if (selectedTable === 'research') {
+      return stats.researchStats[selectedMetric]
+    } else if (selectedTable === 'total') {
+      return stats.deliverables.total[selectedMetric]
+    } else if (selectedTable === 'hours') {
+      return stats.deliverables.hours[selectedMetric]
+    }
+    return null
+  }
+
+  const selectedData = getSelectedData()
 
   return (
     <div className="app">
@@ -72,56 +110,123 @@ function App() {
       </header>
 
       <main>
-        <div className="table-container">
-          <table>
-            <thead>
-              <tr>
-                <th className="category-col">Deliverable</th>
-                {stats.weeks.map((week, idx) => (
-                  <th key={idx} className="data-col">{week}</th>
-                ))}
-                <th className="data-col avg-col">4-Week Avg</th>
-                <th className="data-col wow-col">WoW</th>
-              </tr>
-            </thead>
-            <tbody>
-              {categoryOrder.map(category => {
-                const data = stats.categories[category]
-                if (!data) return null
-                const isTotal = category === 'TOTAL SENT TO DESIGN'
-                const isSelected = selectedCategory === category
+        {/* Table 1: Weekly Research Stats */}
+        <section className="table-section">
+          <h2>Weekly Research Stats</h2>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th className="category-col">Metric</th>
+                  {stats.weeks.map((week, idx) => (
+                    <th key={idx} className="data-col">{week}</th>
+                  ))}
+                  <th className="data-col avg-col">4-Week Avg</th>
+                  <th className="data-col wow-col">WoW</th>
+                </tr>
+              </thead>
+              <tbody>
+                {researchStatsOrder.map(metric => {
+                  const data = stats.researchStats[metric]
+                  if (!data) return null
+                  const isSelected = selectedMetric === metric && selectedTable === 'research'
+                  const isTotal = metric.startsWith('TOTAL')
 
-                return (
-                  <tr
-                    key={category}
-                    className={`${isTotal ? 'total-row' : ''} ${isSelected ? 'selected' : ''}`}
-                    onClick={() => setSelectedCategory(isSelected ? null : category)}
-                  >
-                    <td className="category-col">{category}</td>
-                    {data.weekly.map((val, idx) => (
-                      <td key={idx} className="data-col">{val.toLocaleString()}</td>
-                    ))}
-                    <td className="data-col avg-col">{data.fourWeekAvg.toLocaleString()}</td>
-                    <td className={`data-col wow-col ${getWoWClass(data.weekOverWeek)}`}>
-                      {formatWoW(data.weekOverWeek)}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                  return (
+                    <tr
+                      key={metric}
+                      className={`${isTotal ? 'total-row' : ''} ${isSelected ? 'selected' : ''}`}
+                      onClick={() => handleRowClick(metric, 'research')}
+                    >
+                      <td className="category-col">{metric}</td>
+                      {data.weekly.map((val, idx) => (
+                        <td key={idx} className="data-col">{val.toLocaleString()}</td>
+                      ))}
+                      <td className="data-col avg-col">{data.fourWeekAvg.toLocaleString()}</td>
+                      <td className={`data-col wow-col ${getWoWClass(data.weekOverWeek)}`}>
+                        {formatWoW(data.weekOverWeek)}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
 
-        {selectedCategory && (
+        {/* Table 2: Deliverables and Total Hours */}
+        <section className="table-section">
+          <h2>Deliverables and Total Hours</h2>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th className="category-col">Deliverable</th>
+                  <th className="type-col">Type</th>
+                  {stats.weeks.map((week, idx) => (
+                    <th key={idx} className="data-col">{week}</th>
+                  ))}
+                  <th className="data-col avg-col">4-Week Avg</th>
+                  <th className="data-col wow-col">WoW</th>
+                </tr>
+              </thead>
+              <tbody>
+                {deliverablesOrder.flatMap(col => {
+                  const totalData = stats.deliverables.total[col]
+                  const hoursData = stats.deliverables.hours[col]
+                  if (!totalData || !hoursData) return []
+
+                  const isTotalSelected = selectedMetric === col && selectedTable === 'total'
+                  const isHoursSelected = selectedMetric === col && selectedTable === 'hours'
+
+                  return [
+                    <tr
+                      key={`${col}-total`}
+                      className={`deliverable-first ${isTotalSelected ? 'selected' : ''}`}
+                      onClick={() => handleRowClick(col, 'total')}
+                    >
+                      <td className="category-col">{col}</td>
+                      <td className="type-col">Total</td>
+                      {totalData.weekly.map((val, idx) => (
+                        <td key={idx} className="data-col">{val.toLocaleString()}</td>
+                      ))}
+                      <td className="data-col avg-col">{totalData.fourWeekAvg.toLocaleString()}</td>
+                      <td className={`data-col wow-col ${getWoWClass(totalData.weekOverWeek)}`}>
+                        {formatWoW(totalData.weekOverWeek)}
+                      </td>
+                    </tr>,
+                    <tr
+                      key={`${col}-hours`}
+                      className={`deliverable-second hours-row ${isHoursSelected ? 'selected' : ''}`}
+                      onClick={() => handleRowClick(col, 'hours')}
+                    >
+                      <td className="category-col">{col}</td>
+                      <td className="type-col">Hours</td>
+                      {hoursData.weekly.map((val, idx) => (
+                        <td key={idx} className="data-col">{val}</td>
+                      ))}
+                      <td className="data-col avg-col">{hoursData.fourWeekAvg}</td>
+                      <td className={`data-col wow-col ${getWoWClass(hoursData.weekOverWeek)}`}>
+                        {formatWoW(hoursData.weekOverWeek)}
+                      </td>
+                    </tr>
+                  ]
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        {selectedData && (
           <div className="chart-container">
-            <h2>{selectedCategory}</h2>
+            <h2>{selectedMetric} {selectedTable === 'hours' ? '(Hours)' : selectedTable === 'total' ? '(Total)' : ''}</h2>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={getChartData(selectedCategory)} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <BarChart data={getChartData(selectedData)} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="week" />
                 <YAxis />
                 <Tooltip
-                  formatter={(value) => [value.toLocaleString(), 'Count']}
+                  formatter={(value) => [value.toLocaleString(), selectedTable === 'hours' ? 'Hours' : 'Count']}
                   labelFormatter={(label) => `Week of ${label}`}
                 />
                 <Bar dataKey="value" fill="#4f46e5" radius={[4, 4, 0, 0]} />
