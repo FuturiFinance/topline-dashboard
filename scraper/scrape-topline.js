@@ -20,6 +20,7 @@ const CATEGORY_MAP = {
   "infographic": "INFOGRAPHICS",
   "presentation": "PRESENTATIONS",
   "snapshot": "SNAPSHOTS",
+  "one-sheet": "SNAPSHOTS",
 };
 
 // Resource types are combined (starts with Resource_)
@@ -39,49 +40,52 @@ const STATUS_INSIGHTS_DELIVERED = "Insights Delivered";
 
 // --- Date Utilities ---
 
-// Get the Monday of a given week
-function getMonday(date) {
+// Get the Monday of a given week (in UTC)
+function getMondayUTC(date) {
   const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  d.setDate(diff);
-  d.setHours(0, 0, 0, 0);
+  const day = d.getUTCDay();
+  const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1);
+  d.setUTCDate(diff);
+  d.setUTCHours(0, 0, 0, 0);
   return d;
 }
 
-// Get prior 4 weeks as Mon-Sun ranges
+// Get prior 4 weeks as Mon-Sun ranges (using UTC)
 function getPrior4Weeks() {
   const today = new Date();
-  const currentMonday = getMonday(today);
+  const currentMonday = getMondayUTC(today);
 
   // Go back to previous Monday (start of last complete week)
   const lastMonday = new Date(currentMonday);
-  lastMonday.setDate(lastMonday.getDate() - 7);
+  lastMonday.setUTCDate(lastMonday.getUTCDate() - 7);
 
   const weeks = [];
   for (let i = 0; i < 4; i++) {
     const weekStart = new Date(lastMonday);
-    weekStart.setDate(weekStart.getDate() - (i * 7));
+    weekStart.setUTCDate(weekStart.getUTCDate() - (i * 7));
+    weekStart.setUTCHours(0, 0, 0, 0);
 
+    // End of Sunday = start of Sunday + 23:59:59.999
     const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 6);
+    weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
+    weekEnd.setUTCHours(23, 59, 59, 999);
 
     weeks.unshift({
       start: weekStart,
       end: weekEnd,
-      label: `${formatDate(weekStart)} - ${formatDate(weekEnd)}`,
+      label: `${formatDateUTC(weekStart)} - ${formatDateUTC(weekEnd)}`,
     });
   }
 
   return weeks;
 }
 
-function formatDate(date) {
-  return `${String(date.getMonth() + 1).padStart(2, "0")}/${String(date.getDate()).padStart(2, "0")}/${date.getFullYear()}`;
+function formatDateUTC(date) {
+  return `${String(date.getUTCMonth() + 1).padStart(2, "0")}/${String(date.getUTCDate()).padStart(2, "0")}/${date.getUTCFullYear()}`;
 }
 
 function formatDateForInput(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
 }
 
 // --- CSV Parsing ---
@@ -175,14 +179,26 @@ function processData(rows, weeks) {
 
   // Track unique deliverables for debugging
   const seenDeliverables = new Set();
+  // Track processed rows to avoid duplicates (server returns overlapping date ranges)
+  const processedRows = new Set();
   let matchedRows = 0;
   let deliveredRows = 0;
+  let duplicateRows = 0;
 
   // Process each row
   rows.forEach(row => {
+    const researchId = row["Research ID"];
     const status = row[COL_NEW_STATUS];
     const timestamp = row[COL_TIMESTAMP];
     const deliverable = row[COL_DELIVERABLE];
+
+    // Create unique key for deduplication
+    const rowKey = `${researchId}|${deliverable}|${timestamp}|${status}`;
+    if (processedRows.has(rowKey)) {
+      duplicateRows++;
+      return;
+    }
+    processedRows.add(rowKey);
 
     // Only count rows where status indicates delivery
     const normalizedStatus = normalizeValue(status || "");
@@ -219,8 +235,8 @@ function processData(rows, weeks) {
     });
   });
 
-  console.log(`Delivered rows: ${deliveredRows}, Matched to categories: ${matchedRows}`);
-  console.log(`Unique deliverables seen: ${[...seenDeliverables].slice(0, 10).join(", ")}...`);
+  console.log(`Delivered rows: ${deliveredRows}, Matched: ${matchedRows}, Duplicates skipped: ${duplicateRows}`);
+  console.log(`Unique deliverables: ${[...seenDeliverables].slice(0, 10).join(", ")}...`);
 
   // Calculate averages and WoW change
   categories.forEach(cat => {
@@ -379,25 +395,90 @@ async function run() {
 
     console.log("Logged in successfully!");
 
-    // Step 3: Download each week's data
+    // Step 3: Download and process each week's data independently
     const filesBefore = new Set(fs.readdirSync(DOWNLOAD_DIR));
-    const allRows = [];
 
-    for (const week of weeks) {
+    // Initialize stats structure
+    const stats = {
+      generatedAt: new Date().toISOString(),
+      weeks: weeks.map(w => w.label),
+      categories: {},
+    };
+
+    const categories = [
+      "PERSONALITY", "DIGITAL ANALYSIS", "DIGITAL INTELLIGENCE", "MAPIT",
+      "INSIGHTS", "INFOGRAPHICS", "PRESENTATIONS", "SNAPSHOTS", "RESOURCES",
+      "TOTAL SENT TO DESIGN",
+    ];
+
+    categories.forEach(cat => {
+      stats.categories[cat] = {
+        weekly: weeks.map(() => 0),
+        fourWeekAvg: 0,
+        weekOverWeek: null,
+      };
+    });
+
+    let totalRows = 0;
+    let totalMatched = 0;
+
+    for (let weekIdx = 0; weekIdx < weeks.length; weekIdx++) {
+      const week = weeks[weekIdx];
       const csvPath = await downloadWeekData(page, client, week, filesBefore);
 
-      // Parse and accumulate rows
+      // Parse rows for this week only
       const csvContent = fs.readFileSync(csvPath, "utf-8");
       const rows = parseCSV(csvContent);
       console.log(`Parsed ${rows.length} rows`);
-      allRows.push(...rows);
+      totalRows += rows.length;
+
+      // Process rows for THIS week only (don't let rows cross into other weeks)
+      let weekMatched = 0;
+      rows.forEach(row => {
+        const status = row[COL_NEW_STATUS];
+        const timestamp = row[COL_TIMESTAMP];
+        const deliverable = row[COL_DELIVERABLE];
+
+        const normalizedStatus = normalizeValue(status || "");
+        const isDesignsDelivered = normalizedStatus === normalizeValue(STATUS_DESIGNS_DELIVERED);
+        const isInsightsDelivered = normalizedStatus === normalizeValue(STATUS_INSIGHTS_DELIVERED);
+
+        if (!isDesignsDelivered && !isInsightsDelivered) return;
+        if (!timestamp || !deliverable) return;
+
+        const category = categorizeDeliverable(deliverable);
+        if (!category) return;
+
+        if (category === "INSIGHTS" && !isInsightsDelivered) return;
+        if (category !== "INSIGHTS" && !isDesignsDelivered) return;
+
+        // Parse timestamp and check it falls within THIS week's boundaries
+        const deliveredDate = new Date(timestamp.replace(" ", "T") + "Z");
+        if (deliveredDate >= week.start && deliveredDate <= week.end) {
+          stats.categories[category].weekly[weekIdx]++;
+          stats.categories["TOTAL SENT TO DESIGN"].weekly[weekIdx]++;
+          weekMatched++;
+        }
+      });
+
+      console.log(`Week ${weekIdx + 1} matched: ${weekMatched} rows`);
+      totalMatched += weekMatched;
     }
 
-    console.log(`\nTotal rows: ${allRows.length}`);
+    console.log(`\nTotal rows: ${totalRows}, Matched: ${totalMatched}`);
 
-    // Step 4: Process all data
-    console.log("Processing data...");
-    const stats = processData(allRows, weeks);
+    // Calculate averages and WoW change
+    categories.forEach(cat => {
+      const weekly = stats.categories[cat].weekly;
+      const sum = weekly.reduce((a, b) => a + b, 0);
+      stats.categories[cat].fourWeekAvg = Math.round(sum / 4);
+
+      const lastWeek = weekly[3];
+      const prevWeek = weekly[2];
+      if (prevWeek > 0) {
+        stats.categories[cat].weekOverWeek = Math.round(((lastWeek - prevWeek) / prevWeek) * 100);
+      }
+    });
 
     // Step 5: Save JSON
     const outputPath = path.join(OUTPUT_DIR, "topline-stats.json");
