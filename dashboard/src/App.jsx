@@ -65,7 +65,7 @@ function App() {
   return (
     <div className="app">
       <header>
-        <h1>TopLine Status Dashboard</h1>
+        <h1>TopLine Weekly Dashboard</h1>
         <p className="generated">
           Last updated: {new Date(stats.generatedAt).toLocaleString()}
         </p>
