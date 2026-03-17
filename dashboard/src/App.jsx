@@ -71,7 +71,7 @@ function App() {
 
   // Utilization section: Radio and TV analysts (first names match Pull 2 data keys)
   // Note: Marina Nasonti (was Kestner)
-  const radioAnalysts = ['Adam', 'Alison', 'Amanda', 'Anthony', 'Carly', 'Cheryl', 'Jenn', 'Jordan', 'Kyle', 'Marina', 'Steve', 'Terry']
+  const radioAnalysts = ['Adam', 'Alison', 'Amanda', 'Anthony', 'Carly', 'Jenn', 'Jordan', 'Kyle', 'Marina', 'Steve']
   const tvAnalysts = ['Damaris', 'Hayley', 'Jeff', 'Marta', 'Meghan', 'Nicole', 'Rose']
 
   // Volume baselines
