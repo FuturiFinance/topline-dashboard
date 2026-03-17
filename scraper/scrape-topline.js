@@ -92,49 +92,75 @@ function parseReportCSV(csvText) {
       total: {},
       hours: {},
     },
+    analystStats: [], // Array of { name, reportsCompleted, avgMinutes }
   };
 
-  let inDeliverablesSection = false;
+  let currentSection = null;
   let columnHeaders = [];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
 
-    // Check for section header
+    // Detect section headers
     if (line.includes("Deliverables and Total Hours")) {
-      inDeliverablesSection = true;
+      currentSection = "deliverables";
+      continue;
+    }
+    if (line.includes("Analyst Stats")) {
+      currentSection = "analystStats";
+      continue;
+    }
+    if (line.includes("TOPLINE Capacity Analysis")) {
+      currentSection = null; // Stop parsing
       continue;
     }
 
-    // Parse Deliverables section headers
-    if (inDeliverablesSection && line.startsWith(",")) {
-      // This is the header row: ,"Personality prep","Digital Allocation",...
-      columnHeaders = line.split(",").slice(1).map(h => h.replace(/"/g, "").trim());
-      continue;
+    // Parse Deliverables section
+    if (currentSection === "deliverables") {
+      if (line.startsWith(",")) {
+        // Header row
+        columnHeaders = line.split(",").slice(1).map(h => h.replace(/"/g, "").trim());
+        continue;
+      }
+      if (line.startsWith("Total,")) {
+        const values = line.split(",").slice(1);
+        columnHeaders.forEach((col, idx) => {
+          data.deliverables.total[col] = parseFloat(values[idx]) || 0;
+        });
+        continue;
+      }
+      if (line.startsWith("Hours,")) {
+        const values = line.split(",").slice(1);
+        columnHeaders.forEach((col, idx) => {
+          data.deliverables.hours[col] = parseFloat(values[idx]) || 0;
+        });
+        currentSection = null;
+        continue;
+      }
     }
 
-    // Parse Total row in Deliverables section
-    if (inDeliverablesSection && line.startsWith("Total,")) {
-      const values = line.split(",").slice(1);
-      columnHeaders.forEach((col, idx) => {
-        data.deliverables.total[col] = parseFloat(values[idx]) || 0;
-      });
-      continue;
+    // Parse Analyst Stats section
+    if (currentSection === "analystStats") {
+      // Skip header row
+      if (line.startsWith(",")) {
+        continue;
+      }
+      // Parse analyst data: Name,ReportsCompleted,AvgMinutes
+      // Handle BOM character and clean name
+      const parts = line.split(",");
+      if (parts.length >= 3) {
+        const name = parts[0].replace(/[^\x20-\x7E]/g, "").trim(); // Remove non-printable chars
+        const reportsCompleted = parseInt(parts[1], 10) || 0;
+        const avgMinutes = parseInt(parts[2], 10) || 0;
+        if (name && name.length > 0) {
+          data.analystStats.push({ name, reportsCompleted, avgMinutes });
+        }
+      }
     }
 
-    // Parse Hours row in Deliverables section
-    if (inDeliverablesSection && line.startsWith("Hours,")) {
-      const values = line.split(",").slice(1);
-      columnHeaders.forEach((col, idx) => {
-        data.deliverables.hours[col] = parseFloat(values[idx]) || 0;
-      });
-      inDeliverablesSection = false; // Done with this section
-      continue;
-    }
-
-    // Parse key-value pairs for Research Stats: "Label",value
+    // Parse key-value pairs for Research Stats
     const match = line.match(/^"([^"]+)",(\d+(?:\.\d+)?)$/);
-    if (match) {
+    if (match && currentSection !== "analystStats") {
       const label = match[1];
       const value = parseFloat(match[2]);
       if (RESEARCH_STATS_LABELS.includes(label)) {
@@ -163,7 +189,6 @@ async function downloadWeekData(page, client, week, filesBefore, isFirstDownload
 
   console.log(`Setting dates: ${fromValue} to ${toValue}`);
 
-  // Set dates using JavaScript
   await page.evaluate(({ startDate, endDate }) => {
     const inputs = document.querySelectorAll('input[type="date"]');
     if (inputs[0]) {
@@ -180,7 +205,6 @@ async function downloadWeekData(page, client, week, filesBefore, isFirstDownload
 
   await new Promise(r => setTimeout(r, 1000));
 
-  // Click download button
   console.log("Clicking Download button...");
   await page.evaluate(() => {
     const buttons = [...document.querySelectorAll('button, a.btn')];
@@ -192,7 +216,6 @@ async function downloadWeekData(page, client, week, filesBefore, isFirstDownload
 
   await new Promise(r => setTimeout(r, 3000));
 
-  // Wait for download
   let csvFile = null;
   const maxWait = 60000;
   const startTime = Date.now();
@@ -223,7 +246,6 @@ async function downloadWeekData(page, client, week, filesBefore, isFirstDownload
 // --- Main Scraper ---
 
 async function run() {
-  // Ensure directories exist
   if (!fs.existsSync(DOWNLOAD_DIR)) {
     fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
   }
@@ -251,7 +273,6 @@ async function run() {
 
   const page = await browser.newPage();
 
-  // Configure download behavior
   const client = await page.createCDPSession();
   await client.send("Page.setDownloadBehavior", {
     behavior: "allow",
@@ -283,7 +304,6 @@ async function run() {
 
     console.log("Logged in successfully!");
 
-    // Navigate to reports page
     await page.goto(EXPORT_URL, { waitUntil: "networkidle2", timeout: 30000 });
 
     const filesBefore = new Set(fs.readdirSync(DOWNLOAD_DIR));
@@ -297,6 +317,7 @@ async function run() {
         total: {},
         hours: {},
       },
+      analystStats: {}, // { analystName: { reportsCompleted: [...], avgMinutes: [...], pctOfTotal: [...], weekOverWeek: null } }
     };
 
     // Initialize research stats
@@ -322,24 +343,27 @@ async function run() {
       };
     });
 
+    // Track all analysts across weeks
+    const allAnalysts = new Set();
+    const weeklyAnalystData = []; // Array of arrays, one per week
+
     // Download and process each week
     for (let weekIdx = 0; weekIdx < weeks.length; weekIdx++) {
       const week = weeks[weekIdx];
       const isFirstDownload = weekIdx === 0;
       const csvPath = await downloadWeekData(page, client, week, filesBefore, isFirstDownload);
 
-      // Parse the CSV
       const csvContent = fs.readFileSync(csvPath, "utf-8");
       const weekData = parseReportCSV(csvContent);
 
-      // Store research stats for this week
+      // Store research stats
       Object.entries(weekData.researchStats).forEach(([label, value]) => {
         if (stats.researchStats[label]) {
           stats.researchStats[label].weekly[weekIdx] = value;
         }
       });
 
-      // Store deliverables for this week
+      // Store deliverables
       Object.entries(weekData.deliverables.total).forEach(([col, value]) => {
         if (stats.deliverables.total[col]) {
           stats.deliverables.total[col].weekly[weekIdx] = value;
@@ -351,11 +375,44 @@ async function run() {
         }
       });
 
-      console.log(`Parsed research stats:`, Object.keys(weekData.researchStats).length, "items");
-      console.log(`Parsed deliverables:`, Object.keys(weekData.deliverables.total).length, "columns");
+      // Store analyst stats
+      weekData.analystStats.forEach(a => allAnalysts.add(a.name));
+      weeklyAnalystData[weekIdx] = weekData.analystStats;
+
+      console.log(`Parsed research stats: ${Object.keys(weekData.researchStats).length} items`);
+      console.log(`Parsed deliverables: ${Object.keys(weekData.deliverables.total).length} columns`);
+      console.log(`Parsed analysts: ${weekData.analystStats.length} analysts`);
     }
 
-    // Calculate averages and WoW change for research stats
+    // Build analyst stats structure
+    const analystNames = [...allAnalysts].sort();
+    analystNames.forEach(name => {
+      stats.analystStats[name] = {
+        reportsCompleted: weeks.map(() => 0),
+        avgMinutes: weeks.map(() => 0),
+        pctOfTotal: weeks.map(() => 0),
+        fourWeekAvg: 0,
+        weekOverWeek: null,
+      };
+    });
+
+    // Fill in analyst data per week and calculate % of total
+    for (let weekIdx = 0; weekIdx < weeks.length; weekIdx++) {
+      const weekAnalysts = weeklyAnalystData[weekIdx] || [];
+      const totalReports = weekAnalysts.reduce((sum, a) => sum + a.reportsCompleted, 0);
+
+      weekAnalysts.forEach(a => {
+        if (stats.analystStats[a.name]) {
+          stats.analystStats[a.name].reportsCompleted[weekIdx] = a.reportsCompleted;
+          stats.analystStats[a.name].avgMinutes[weekIdx] = a.avgMinutes;
+          stats.analystStats[a.name].pctOfTotal[weekIdx] = totalReports > 0
+            ? Math.round((a.reportsCompleted / totalReports) * 1000) / 10 // One decimal
+            : 0;
+        }
+      });
+    }
+
+    // Calculate averages and WoW for research stats
     RESEARCH_STATS_LABELS.forEach(label => {
       const weekly = stats.researchStats[label].weekly;
       const sum = weekly.reduce((a, b) => a + b, 0);
@@ -368,9 +425,8 @@ async function run() {
       }
     });
 
-    // Calculate averages and WoW change for deliverables
+    // Calculate averages and WoW for deliverables
     DELIVERABLES_COLUMNS.forEach(col => {
-      // Total counts
       const totalWeekly = stats.deliverables.total[col].weekly;
       const totalSum = totalWeekly.reduce((a, b) => a + b, 0);
       stats.deliverables.total[col].fourWeekAvg = Math.round(totalSum / 4);
@@ -378,12 +434,26 @@ async function run() {
         stats.deliverables.total[col].weekOverWeek = Math.round(((totalWeekly[3] - totalWeekly[2]) / totalWeekly[2]) * 100);
       }
 
-      // Hours
       const hoursWeekly = stats.deliverables.hours[col].weekly;
       const hoursSum = hoursWeekly.reduce((a, b) => a + b, 0);
-      stats.deliverables.hours[col].fourWeekAvg = Math.round(hoursSum * 10 / 4) / 10; // One decimal place
+      stats.deliverables.hours[col].fourWeekAvg = Math.round(hoursSum * 10 / 4) / 10;
       if (hoursWeekly[2] > 0) {
         stats.deliverables.hours[col].weekOverWeek = Math.round(((hoursWeekly[3] - hoursWeekly[2]) / hoursWeekly[2]) * 100);
+      }
+    });
+
+    // Calculate averages and WoW for analysts
+    analystNames.forEach(name => {
+      const data = stats.analystStats[name];
+      const sum = data.reportsCompleted.reduce((a, b) => a + b, 0);
+      data.fourWeekAvg = Math.round(sum / 4);
+
+      const lastWeek = data.reportsCompleted[3];
+      const prevWeek = data.reportsCompleted[2];
+      if (prevWeek > 0) {
+        data.weekOverWeek = Math.round(((lastWeek - prevWeek) / prevWeek) * 100);
+      } else if (lastWeek > 0) {
+        data.weekOverWeek = 100; // New this week
       }
     });
 
@@ -392,7 +462,7 @@ async function run() {
     fs.writeFileSync(outputPath, JSON.stringify(stats, null, 2));
     console.log(`\nOutput saved to: ${outputPath}`);
 
-    // Print summary
+    // Print summaries
     console.log("\n--- Table 1: Weekly Research Stats ---");
     RESEARCH_STATS_LABELS.forEach(label => {
       const data = stats.researchStats[label];
@@ -407,11 +477,11 @@ async function run() {
       console.log(`${col.padEnd(40)}: ${data.weekly.map(n => String(n).padStart(6)).join("")} | Avg: ${String(data.fourWeekAvg).padStart(6)} | WoW: ${wow}`);
     });
 
-    console.log("\n--- Table 2: Deliverables (Hours) ---");
-    DELIVERABLES_COLUMNS.forEach(col => {
-      const data = stats.deliverables.hours[col];
+    console.log("\n--- Table 3: Analyst Stats (Reports Completed) ---");
+    analystNames.forEach(name => {
+      const data = stats.analystStats[name];
       const wow = data.weekOverWeek !== null ? `${data.weekOverWeek}%` : "N/A";
-      console.log(`${col.padEnd(40)}: ${data.weekly.map(n => String(n).padStart(6)).join("")} | Avg: ${String(data.fourWeekAvg).padStart(6)} | WoW: ${wow}`);
+      console.log(`${name.padEnd(20)}: ${data.reportsCompleted.map(n => String(n).padStart(5)).join("")} | Avg: ${String(data.fourWeekAvg).padStart(4)} | WoW: ${wow}`);
     });
 
   } catch (err) {

@@ -171,6 +171,29 @@ footer {
   color: #dc2626;
 }
 
+/* Analyst table styles */
+.analyst-col {
+  min-width: 120px;
+}
+
+.pct-col {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.subheader th {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 8px;
+  background: var(--code-bg);
+  border-bottom: 2px solid var(--border);
+}
+
+.subhead {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   header, main, footer {

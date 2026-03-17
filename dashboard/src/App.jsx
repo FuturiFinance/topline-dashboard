@@ -56,6 +56,9 @@ function App() {
     "Research by Analysts (Average minutes)",
   ]
 
+  // Table 3: Analyst names (sorted alphabetically)
+  const analystNames = Object.keys(stats.analystStats || {}).sort()
+
   const formatWoW = (value) => {
     if (value === null) return '—'
     const sign = value >= 0 ? '+' : ''
@@ -72,7 +75,7 @@ function App() {
   const getChartData = (data) => {
     return stats.weeks.map((week, idx) => ({
       week: week.split(' - ')[0],
-      value: data.weekly[idx]
+      value: data.weekly ? data.weekly[idx] : data.reportsCompleted[idx]
     }))
   }
 
@@ -94,6 +97,8 @@ function App() {
       return stats.deliverables.total[selectedMetric]
     } else if (selectedTable === 'hours') {
       return stats.deliverables.hours[selectedMetric]
+    } else if (selectedTable === 'analyst') {
+      return stats.analystStats[selectedMetric]
     }
     return null
   }
@@ -217,16 +222,78 @@ function App() {
           </div>
         </section>
 
+        {/* Table 3: Research Team Output */}
+        <section className="table-section">
+          <h2>Research Team Output</h2>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th className="category-col analyst-col">Analyst</th>
+                  {stats.weeks.map((week, idx) => (
+                    <th key={idx} className="data-col" colSpan={2}>{week}</th>
+                  ))}
+                  <th className="data-col avg-col">4-Week Avg</th>
+                  <th className="data-col wow-col">WoW</th>
+                </tr>
+                <tr className="subheader">
+                  <th></th>
+                  {stats.weeks.map((_, idx) => (
+                    [
+                      <th key={`${idx}-reports`} className="data-col subhead">Reports</th>,
+                      <th key={`${idx}-pct`} className="data-col subhead">% Total</th>
+                    ]
+                  )).flat()}
+                  <th className="data-col avg-col subhead">Reports</th>
+                  <th className="data-col wow-col subhead">Reports</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analystNames.map(name => {
+                  const data = stats.analystStats[name]
+                  if (!data) return null
+                  const isSelected = selectedMetric === name && selectedTable === 'analyst'
+
+                  return (
+                    <tr
+                      key={name}
+                      className={isSelected ? 'selected' : ''}
+                      onClick={() => handleRowClick(name, 'analyst')}
+                    >
+                      <td className="category-col analyst-col">{name}</td>
+                      {data.reportsCompleted.map((val, idx) => (
+                        [
+                          <td key={`${idx}-reports`} className="data-col">{val}</td>,
+                          <td key={`${idx}-pct`} className="data-col pct-col">{data.pctOfTotal[idx]}%</td>
+                        ]
+                      )).flat()}
+                      <td className="data-col avg-col">{data.fourWeekAvg}</td>
+                      <td className={`data-col wow-col ${getWoWClass(data.weekOverWeek)}`}>
+                        {formatWoW(data.weekOverWeek)}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
         {selectedData && (
           <div className="chart-container">
-            <h2>{selectedMetric} {selectedTable === 'hours' ? '(Hours)' : selectedTable === 'total' ? '(Total)' : ''}</h2>
+            <h2>
+              {selectedMetric}
+              {selectedTable === 'hours' ? ' (Hours)' : ''}
+              {selectedTable === 'total' ? ' (Total)' : ''}
+              {selectedTable === 'analyst' ? ' - Reports Completed' : ''}
+            </h2>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={getChartData(selectedData)} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="week" />
                 <YAxis />
                 <Tooltip
-                  formatter={(value) => [value.toLocaleString(), selectedTable === 'hours' ? 'Hours' : 'Count']}
+                  formatter={(value) => [value.toLocaleString(), selectedTable === 'hours' ? 'Hours' : selectedTable === 'analyst' ? 'Reports' : 'Count']}
                   labelFormatter={(label) => `Week of ${label}`}
                 />
                 <Bar dataKey="value" fill="#4f46e5" radius={[4, 4, 0, 0]} />
