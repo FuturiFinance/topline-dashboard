@@ -95,11 +95,7 @@ function App() {
         (week.totalReports / baseline.reports)
       ) / 2 * 100
 
-      const totalMinutes = (
-        week.totalRequests * week.avgRequestTime +
-        week.totalReports * week.avgReportTime +
-        week.totalDesigns * week.avgDesignTime
-      )
+      const totalMinutes = week.totalRequests * week.avgRequestTime
       const timeUtil = (totalMinutes / 2400) * 100
 
       return {
