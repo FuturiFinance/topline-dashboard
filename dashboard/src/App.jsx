@@ -418,7 +418,7 @@ function App() {
             <h3 className="sub-table-title">
               Radio {utilizationMode === 'volume'
                 ? `(Baseline: ${RADIO_BASELINE.requests} req/wk, ${RADIO_BASELINE.reports} reports/wk)`
-                : '(2700 min/wk = 100%)'}
+                : '(45 hrs/wk = 100%)'}
             </h3>
             <div className="table-container">
               <table className="utilization-table">
@@ -486,7 +486,7 @@ function App() {
             <h3 className="sub-table-title">
               TV {utilizationMode === 'volume'
                 ? `(Baseline: ${TV_BASELINE.requests} req/wk, ${TV_BASELINE.reports} reports/wk)`
-                : '(2700 min/wk = 100%)'}
+                : '(45 hrs/wk = 100%)'}
             </h3>
             <div className="table-container">
               <table className="utilization-table">
