@@ -1,6 +1,9 @@
 name: Weekly Dashboard Update
 
 on:
+  push:
+    branches:
+      - main
   schedule:
     # Run every Monday at 7AM UTC (2AM EST / 3AM EDT)
     - cron: '0 7 * * 1'
