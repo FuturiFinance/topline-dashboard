@@ -702,13 +702,13 @@ function App() {
               </div>
             </div>
 
-            {/* Analyst Breakdown */}
-            <h3 className="sub-table-title">Analyst Breakdown</h3>
+            {/* Team Total */}
+            <h3 className="sub-table-title">Team Summary</h3>
             <div className="table-container">
               <table className="utilization-table">
                 <thead>
                   <tr>
-                    <th className="category-col analyst-col">Analyst</th>
+                    <th className="category-col analyst-col">Team</th>
                     <th className="data-col">Avg Req/wk</th>
                     <th className="data-col">Avg Designs/wk</th>
                     <th className="data-col">Current Util</th>
@@ -716,21 +716,8 @@ function App() {
                   </tr>
                 </thead>
                 <tbody>
-                  {forecastData.analysts.map(analyst => (
-                    <tr key={analyst.name}>
-                      <td className="category-col analyst-col">{analyst.name}</td>
-                      <td className="data-col">{analyst.avgRequests}</td>
-                      <td className="data-col">{analyst.avgDesigns}</td>
-                      <td className={`data-col ${analyst.currentUtil >= 100 ? 'positive' : analyst.currentUtil < 50 ? 'negative' : ''}`}>
-                        {analyst.currentUtil}%
-                      </td>
-                      <td className={`data-col ${analyst.forecastUtil >= 100 ? 'positive' : analyst.forecastUtil < 50 ? 'negative' : ''}`}>
-                        {analyst.forecastUtil}%
-                      </td>
-                    </tr>
-                  ))}
                   <tr className="total-row">
-                    <td className="category-col analyst-col">Team Total</td>
+                    <td className="category-col analyst-col">All Analysts ({forecastData.currentHeadcount})</td>
                     <td className="data-col">{forecastData.totalRequests}</td>
                     <td className="data-col">{forecastData.totalDesigns}</td>
                     <td className="data-col">{forecastData.avgCurrentUtil}%</td>
