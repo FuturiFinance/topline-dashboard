@@ -23,14 +23,17 @@ jobs:
           node-version: '20'
 
       - name: Install scraper dependencies
+        if: github.event_name == 'schedule'
         working-directory: ./scraper
         run: npm ci
 
       - name: Install Puppeteer browser
+        if: github.event_name == 'schedule'
         working-directory: ./scraper
         run: npx puppeteer browsers install chrome
 
       - name: Run scraper
+        if: github.event_name == 'schedule'
         working-directory: ./scraper
         env:
           TOPLINE_EMAIL: ${{ secrets.TOPLINE_EMAIL }}
