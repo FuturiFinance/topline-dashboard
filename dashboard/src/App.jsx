@@ -8,8 +8,8 @@ function App() {
   const [selectedTable, setSelectedTable] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [activeTab, setActiveTab] = useState('research')
-  const [utilizationMode, setUtilizationMode] = useState('volume') // 'volume' or 'time'
+  const [activeTab, setActiveTab] = useState('utilization')
+  const [utilizationMode, setUtilizationMode] = useState('time') // 'volume' or 'time'
 
   useEffect(() => {
     fetch('/data/topline-stats.json')
@@ -33,10 +33,10 @@ function App() {
 
   // Tab configuration
   const tabs = [
-    { id: 'research', label: 'Weekly Research Stats' },
-    { id: 'deliverables', label: 'Deliverables and Total Hours' },
     { id: 'utilization', label: 'Utilization by Analyst' },
     { id: 'team', label: 'Research Team Output' },
+    { id: 'research', label: 'Weekly Research Stats' },
+    { id: 'deliverables', label: 'Deliverables and Total Hours' },
   ]
 
   // Table 1: Weekly Research Stats order
@@ -95,11 +95,10 @@ function App() {
         (week.totalReports / baseline.reports)
       ) / 2 * 100
 
-      const totalMinutes = (
-        week.totalRequests * week.avgRequestTime +
-        week.totalDesigns * week.avgDesignTime
-      )
-      const timeUtil = (totalMinutes / 2400) * 100
+      const totalMinutes =
+        ((week.totalRequests * week.avgRequestTime) + (week.totalReports * week.avgReportTime)) / 2 +
+        (week.totalDesigns * week.avgDesignTime)
+      const timeUtil = (totalMinutes / 2700) * 100
 
       return {
         ...week,
@@ -421,7 +420,7 @@ function App() {
             <h3 className="sub-table-title">
               Radio {utilizationMode === 'volume'
                 ? `(Baseline: ${RADIO_BASELINE.requests} req/wk, ${RADIO_BASELINE.reports} reports/wk)`
-                : '(2400 min/wk = 100%)'}
+                : '(2700 min/wk = 100%)'}
             </h3>
             <div className="table-container">
               <table className="utilization-table">
@@ -447,7 +446,7 @@ function App() {
                           const util = utilizationMode === 'volume' ? week.volumeUtil : week.timeUtil
                           return (
                             <td key={idx} className={`data-col ${util >= 100 ? 'positive' : util < 50 ? 'negative' : ''}`}>
-                              {util.toFixed(0)}%
+                              {util.toFixed(0)}% <span className="util-details">{week.totalRequests}/{week.totalReports}</span>
                             </td>
                           )
                         })}
@@ -489,7 +488,7 @@ function App() {
             <h3 className="sub-table-title">
               TV {utilizationMode === 'volume'
                 ? `(Baseline: ${TV_BASELINE.requests} req/wk, ${TV_BASELINE.reports} reports/wk)`
-                : '(2400 min/wk = 100%)'}
+                : '(2700 min/wk = 100%)'}
             </h3>
             <div className="table-container">
               <table className="utilization-table">
@@ -514,7 +513,7 @@ function App() {
                           const util = utilizationMode === 'volume' ? week.volumeUtil : week.timeUtil
                           return (
                             <td key={idx} className={`data-col ${util >= 100 ? 'positive' : util < 50 ? 'negative' : ''}`}>
-                              {util.toFixed(0)}%
+                              {util.toFixed(0)}% <span className="util-details">{week.totalRequests}/{week.totalReports}</span>
                             </td>
                           )
                         })}
