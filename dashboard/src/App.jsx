@@ -10,6 +10,8 @@ function App() {
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('utilization')
   const [utilizationMode, setUtilizationMode] = useState('time') // 'volume' or 'time'
+  const [scenarioAdjustment, setScenarioAdjustment] = useState(0) // -20, -10, 0, +10, +20
+  const [headcountChange, setHeadcountChange] = useState(0) // +/- analysts
 
   useEffect(() => {
     fetch('/data/topline-stats.json')
@@ -34,6 +36,7 @@ function App() {
   // Tab configuration
   const tabs = [
     { id: 'utilization', label: 'Utilization by Analyst' },
+    { id: 'forecast', label: 'Utilization Forecast' },
     { id: 'team', label: 'Research Team Output' },
     { id: 'research', label: 'Weekly Research Stats' },
     { id: 'deliverables', label: 'Deliverables and Total Hours' },
@@ -257,6 +260,78 @@ function App() {
 
   // Get week labels for utilization (last 2 weeks)
   const utilizationWeeks = recentWeekIndices.map(idx => stats.weeks[idx])
+
+  // Forecast calculations
+  const allAnalysts = [...radioAnalysts, ...tvAnalysts]
+
+  const getForecastData = () => {
+    const analysts = allAnalysts.map(name => {
+      const util = stats.utilization?.[name]
+      if (!util) return null
+
+      // Get 2-week averages for run rate
+      const recentWeeks = recentWeekIndices.map(idx => util.weekly[idx])
+      const avgRequests = recentWeeks.reduce((sum, w) => sum + w.totalRequests, 0) / 2
+      const avgDesigns = recentWeeks.reduce((sum, w) => sum + w.totalDesigns, 0) / 2
+      const avgRequestTime = recentWeeks.reduce((sum, w) => sum + w.avgRequestTime, 0) / 2
+      const avgDesignTime = recentWeeks.reduce((sum, w) => sum + w.avgDesignTime, 0) / 2
+
+      // Current utilization
+      const currentMinutes = (avgRequests * avgRequestTime) + (avgDesigns * avgDesignTime)
+      const currentUtil = (currentMinutes / 2700) * 100
+
+      // Forecast with scenario adjustment
+      const adjustedRequests = avgRequests * (1 + scenarioAdjustment / 100)
+      const adjustedDesigns = avgDesigns * (1 + scenarioAdjustment / 100)
+      const forecastMinutes = (adjustedRequests * avgRequestTime) + (adjustedDesigns * avgDesignTime)
+      const forecastUtil = (forecastMinutes / 2700) * 100
+
+      return {
+        name,
+        fullName: util.fullName,
+        team: util.team,
+        avgRequests: Math.round(avgRequests * 10) / 10,
+        avgDesigns: Math.round(avgDesigns * 10) / 10,
+        avgRequestTime: Math.round(avgRequestTime),
+        avgDesignTime: Math.round(avgDesignTime),
+        currentUtil: Math.round(currentUtil),
+        forecastUtil: Math.round(forecastUtil)
+      }
+    }).filter(d => d !== null)
+
+    // Team totals
+    const totalCurrentMinutes = analysts.reduce((sum, a) => {
+      return sum + (a.avgRequests * a.avgRequestTime) + (a.avgDesigns * a.avgDesignTime)
+    }, 0)
+    const totalForecastMinutes = analysts.reduce((sum, a) => {
+      const adjReq = a.avgRequests * (1 + scenarioAdjustment / 100)
+      const adjDes = a.avgDesigns * (1 + scenarioAdjustment / 100)
+      return sum + (adjReq * a.avgRequestTime) + (adjDes * a.avgDesignTime)
+    }, 0)
+
+    const currentHeadcount = analysts.length
+    const newHeadcount = Math.max(1, currentHeadcount + headcountChange)
+
+    // Average utilization across team
+    const avgCurrentUtil = analysts.reduce((sum, a) => sum + a.currentUtil, 0) / currentHeadcount
+    const avgForecastUtil = analysts.reduce((sum, a) => sum + a.forecastUtil, 0) / currentHeadcount
+
+    // With headcount change - redistribute work evenly
+    const redistributedUtil = (totalForecastMinutes / newHeadcount) / 2700 * 100
+
+    return {
+      analysts,
+      currentHeadcount,
+      newHeadcount,
+      avgCurrentUtil: Math.round(avgCurrentUtil),
+      avgForecastUtil: Math.round(avgForecastUtil),
+      redistributedUtil: Math.round(redistributedUtil),
+      totalRequests: Math.round(analysts.reduce((sum, a) => sum + a.avgRequests, 0)),
+      totalDesigns: Math.round(analysts.reduce((sum, a) => sum + a.avgDesigns, 0))
+    }
+  }
+
+  const forecastData = getForecastData()
 
   return (
     <div className="app">
@@ -545,6 +620,135 @@ function App() {
                       )
                     })()}
                   </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
+        {/* Utilization Forecast */}
+        {activeTab === 'forecast' && stats.utilization && (
+          <section className="table-section">
+            <h2>Utilization Forecast</h2>
+
+            {/* Team Summary */}
+            <div className="forecast-summary">
+              <div className="summary-card">
+                <h4>Current Team</h4>
+                <div className="summary-value">{forecastData.currentHeadcount} analysts</div>
+                <div className="summary-detail">{forecastData.totalRequests} req/wk · {forecastData.totalDesigns} designs/wk</div>
+                <div className="summary-util">Avg Utilization: <strong>{forecastData.avgCurrentUtil}%</strong></div>
+              </div>
+              <div className="summary-card forecast">
+                <h4>Forecast</h4>
+                <div className="summary-value">{forecastData.newHeadcount} analysts</div>
+                <div className="summary-detail">
+                  {Math.round(forecastData.totalRequests * (1 + scenarioAdjustment / 100))} req/wk ·
+                  {Math.round(forecastData.totalDesigns * (1 + scenarioAdjustment / 100))} designs/wk
+                </div>
+                <div className="summary-util">
+                  Avg Utilization: <strong className={forecastData.redistributedUtil > 100 ? 'negative' : forecastData.redistributedUtil < 80 ? 'positive' : ''}>
+                    {forecastData.redistributedUtil}%
+                  </strong>
+                </div>
+              </div>
+            </div>
+
+            {/* Scenario Presets */}
+            <div className="forecast-controls">
+              <div className="control-group">
+                <label>Workload Scenario</label>
+                <div className="preset-buttons">
+                  {[
+                    { label: 'Light (-20%)', value: -20 },
+                    { label: 'Reduced (-10%)', value: -10 },
+                    { label: 'Current', value: 0 },
+                    { label: 'Busy (+10%)', value: 10 },
+                    { label: 'Heavy (+20%)', value: 20 },
+                  ].map(preset => (
+                    <button
+                      key={preset.value}
+                      className={`preset-btn ${scenarioAdjustment === preset.value ? 'active' : ''}`}
+                      onClick={() => setScenarioAdjustment(preset.value)}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Headcount Adjustment */}
+              <div className="control-group">
+                <label>Team Size Adjustment</label>
+                <div className="headcount-controls">
+                  <button
+                    className="headcount-btn"
+                    onClick={() => setHeadcountChange(h => Math.max(-forecastData.currentHeadcount + 1, h - 1))}
+                  >
+                    − Cut 1
+                  </button>
+                  <span className="headcount-display">
+                    {headcountChange === 0 ? 'No change' :
+                     headcountChange > 0 ? `+${headcountChange} analyst${headcountChange > 1 ? 's' : ''}` :
+                     `${headcountChange} analyst${headcountChange < -1 ? 's' : ''}`}
+                  </span>
+                  <button
+                    className="headcount-btn"
+                    onClick={() => setHeadcountChange(h => h + 1)}
+                  >
+                    + Add 1
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Analyst Breakdown */}
+            <h3 className="sub-table-title">Analyst Breakdown</h3>
+            <div className="table-container">
+              <table className="utilization-table">
+                <thead>
+                  <tr>
+                    <th className="category-col analyst-col">Analyst</th>
+                    <th className="data-col">Avg Req/wk</th>
+                    <th className="data-col">Avg Designs/wk</th>
+                    <th className="data-col">Current Util</th>
+                    <th className="data-col">Forecast Util</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {forecastData.analysts.map(analyst => (
+                    <tr key={analyst.name}>
+                      <td className="category-col analyst-col">{analyst.name}</td>
+                      <td className="data-col">{analyst.avgRequests}</td>
+                      <td className="data-col">{analyst.avgDesigns}</td>
+                      <td className={`data-col ${analyst.currentUtil >= 100 ? 'positive' : analyst.currentUtil < 50 ? 'negative' : ''}`}>
+                        {analyst.currentUtil}%
+                      </td>
+                      <td className={`data-col ${analyst.forecastUtil >= 100 ? 'positive' : analyst.forecastUtil < 50 ? 'negative' : ''}`}>
+                        {analyst.forecastUtil}%
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="total-row">
+                    <td className="category-col analyst-col">Team Total</td>
+                    <td className="data-col">{forecastData.totalRequests}</td>
+                    <td className="data-col">{forecastData.totalDesigns}</td>
+                    <td className="data-col">{forecastData.avgCurrentUtil}%</td>
+                    <td className="data-col">{forecastData.avgForecastUtil}%</td>
+                  </tr>
+                  {headcountChange !== 0 && (
+                    <tr className="total-row highlight">
+                      <td className="category-col analyst-col">
+                        With {forecastData.newHeadcount} analysts
+                      </td>
+                      <td className="data-col">—</td>
+                      <td className="data-col">—</td>
+                      <td className="data-col">—</td>
+                      <td className={`data-col ${forecastData.redistributedUtil >= 100 ? 'negative' : forecastData.redistributedUtil < 80 ? 'positive' : ''}`}>
+                        {forecastData.redistributedUtil}% avg
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

@@ -324,6 +324,151 @@ footer {
   letter-spacing: 0.5px;
 }
 
+/* Forecast Section */
+.forecast-summary {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.summary-card {
+  flex: 1;
+  min-width: 250px;
+  padding: 20px;
+  background: var(--code-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.summary-card.forecast {
+  border-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.summary-card h4 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-value {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-h);
+  margin-bottom: 4px;
+}
+
+.summary-detail {
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+.summary-util {
+  font-size: 16px;
+  color: var(--text);
+}
+
+.summary-util strong {
+  color: var(--text-h);
+}
+
+.summary-util strong.positive {
+  color: #059669;
+}
+
+.summary-util strong.negative {
+  color: #dc2626;
+}
+
+.forecast-controls {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-group label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.preset-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.preset-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.preset-btn:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+
+.preset-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.headcount-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headcount-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.headcount-btn:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent);
+}
+
+.headcount-display {
+  min-width: 120px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.total-row.highlight {
+  background: var(--accent-bg);
+}
+
+.total-row.highlight td {
+  border-top: 2px solid var(--accent);
+}
+
 /* Responsive adjustments */
 @media (max-width: 1024px) {
   header, main, footer {
