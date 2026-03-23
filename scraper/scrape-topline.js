@@ -451,21 +451,79 @@ async function scrapeAnalystStats(page, weeks) {
           );
           if (deliveredOption) {
             const wasCorrect = select.value === deliveredOption.value;
-            if (!wasCorrect) {
-              select.value = deliveredOption.value;
-              select.dispatchEvent(new Event("change", { bubbles: true }));
-            }
             const selectedText = select.options[select.selectedIndex]?.text || "unknown";
-            return { wasCorrect, selectedText, value: select.value };
+            return { wasCorrect, selectedText, value: select.value, needsChange: !wasCorrect, optionValue: deliveredOption.value };
           }
         }
-        return { found: false };
+        return { found: false, needsChange: false };
       });
 
-      if (isFirstSearch) {
-        console.log(`    Date Type check: "${dateTypeStatus.selectedText}" (was already correct: ${dateTypeStatus.wasCorrect})`);
-      } else if (!dateTypeStatus.wasCorrect) {
-        console.log(`    Date Type was reset, re-selected: "${dateTypeStatus.selectedText}"`);
+      // If Date Type needs to be changed, do it and wait for page navigation
+      if (dateTypeStatus.needsChange) {
+        console.log(`    Date Type was reset, re-selecting: "Insights/Design Delivered"`);
+
+        // Set the Date Type and handle potential navigation
+        await Promise.all([
+          page.waitForNavigation({ waitUntil: "networkidle2", timeout: 10000 }).catch(() => {}),
+          page.evaluate((optionValue) => {
+            const selects = document.querySelectorAll("select");
+            for (const select of selects) {
+              const options = [...select.options];
+              const deliveredOption = options.find(opt =>
+                opt.text.toLowerCase().includes("insights") &&
+                opt.text.toLowerCase().includes("design") &&
+                opt.text.toLowerCase().includes("delivered")
+              );
+              if (deliveredOption) {
+                select.value = optionValue;
+                select.dispatchEvent(new Event("change", { bubbles: true }));
+                break;
+              }
+            }
+          }, dateTypeStatus.optionValue)
+        ]);
+
+        await new Promise(r => setTimeout(r, 1000)); // Extra wait after navigation
+
+        // Re-set dates after navigation (they may have been reset)
+        await page.evaluate(({ startDate, endDate }) => {
+          const inputs = document.querySelectorAll('input[type="date"]');
+          if (inputs[0]) {
+            inputs[0].value = startDate;
+            inputs[0].dispatchEvent(new Event("input", { bubbles: true }));
+            inputs[0].dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          if (inputs[1]) {
+            inputs[1].value = endDate;
+            inputs[1].dispatchEvent(new Event("input", { bubbles: true }));
+            inputs[1].dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        }, { startDate: fromValue, endDate: toValue });
+
+        await new Promise(r => setTimeout(r, 300));
+
+        // Re-select analyst after navigation
+        await page.evaluate((analystName) => {
+          const selects = document.querySelectorAll("select");
+          for (const select of selects) {
+            const options = [...select.options];
+            const analystOption = options.find(opt =>
+              opt.text.trim() === analystName || opt.text.includes(analystName)
+            );
+            if (analystOption &&
+                !analystOption.text.toLowerCase().includes("submitted") &&
+                !analystOption.text.toLowerCase().includes("delivered") &&
+                !analystOption.text.toLowerCase().includes("insights")) {
+              select.value = analystOption.value;
+              select.dispatchEvent(new Event("change", { bubbles: true }));
+              break;
+            }
+          }
+        }, fullName);
+
+        await new Promise(r => setTimeout(r, 300));
+      } else if (isFirstSearch) {
+        console.log(`    Date Type check: "${dateTypeStatus.selectedText}" (already correct)`);
       }
       await new Promise(r => setTimeout(r, 200));
 
