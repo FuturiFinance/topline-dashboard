@@ -462,10 +462,12 @@ async function scrapeAnalystStats(page, weeks) {
       if (dateTypeStatus.needsChange) {
         console.log(`    Date Type was reset, re-selecting: "Insights/Design Delivered"`);
 
-        // Set the Date Type and handle potential navigation
-        await Promise.all([
-          page.waitForNavigation({ waitUntil: "networkidle2", timeout: 10000 }).catch(() => {}),
-          page.evaluate((optionValue) => {
+        try {
+          // Start navigation listener BEFORE triggering the change
+          const navigationPromise = page.waitForNavigation({ waitUntil: "networkidle0", timeout: 15000 });
+
+          // Trigger the dropdown change (this will cause navigation)
+          await page.evaluate((optionValue) => {
             const selects = document.querySelectorAll("select");
             for (const select of selects) {
               const options = [...select.options];
@@ -480,10 +482,19 @@ async function scrapeAnalystStats(page, weeks) {
                 break;
               }
             }
-          }, dateTypeStatus.optionValue)
-        ]);
+          }, dateTypeStatus.optionValue);
 
-        await new Promise(r => setTimeout(r, 1000)); // Extra wait after navigation
+          // Wait for navigation to complete
+          await navigationPromise;
+        } catch (navError) {
+          // Navigation might timeout or context destroyed - that's OK, just wait for page to settle
+          console.log(`    Navigation handling: ${navError.message.substring(0, 50)}...`);
+          await new Promise(r => setTimeout(r, 2000));
+        }
+
+        // Wait for page to be fully ready after navigation
+        await page.waitForSelector('input[type="date"]', { timeout: 10000 });
+        await new Promise(r => setTimeout(r, 500));
 
         // Re-set dates after navigation (they may have been reset)
         await page.evaluate(({ startDate, endDate }) => {
