@@ -482,38 +482,38 @@ async function scrapeAnalystStats(page, weeks, existingUtilization = null) {
         return { found: false, needsChange: false };
       });
 
-      // If Date Type needs to be changed, do it and wait for page navigation
+      // If Date Type needs to be changed, reload page with correct Date Type via URL
       if (dateTypeStatus.needsChange) {
-        console.log(`    Date Type was reset, re-selecting: "Insights/Design Delivered"`);
+        console.log(`    Date Type was reset, reloading page with correct settings...`);
 
-        try {
-          // Start navigation listener BEFORE triggering the change
-          const navigationPromise = page.waitForNavigation({ waitUntil: "networkidle0", timeout: 15000 });
+        // Navigate to stats page fresh with a clean state
+        await page.goto(STATS_URL, { waitUntil: "networkidle2", timeout: 30000 });
+        await new Promise(r => setTimeout(r, 1000));
 
-          // Trigger the dropdown change (this will cause navigation)
-          await page.evaluate((optionValue) => {
-            const selects = document.querySelectorAll("select");
-            for (const select of selects) {
-              const options = [...select.options];
-              const deliveredOption = options.find(opt =>
-                opt.text.toLowerCase().includes("insights") &&
-                opt.text.toLowerCase().includes("design") &&
-                opt.text.toLowerCase().includes("delivered")
-              );
-              if (deliveredOption) {
-                select.value = optionValue;
-                select.dispatchEvent(new Event("change", { bubbles: true }));
-                break;
-              }
+        // Set Date Type first before anything else
+        await page.evaluate(() => {
+          const selects = document.querySelectorAll("select");
+          for (const select of selects) {
+            const options = [...select.options];
+            const deliveredOption = options.find(opt =>
+              opt.text.toLowerCase().includes("insights") &&
+              opt.text.toLowerCase().includes("design") &&
+              opt.text.toLowerCase().includes("delivered")
+            );
+            if (deliveredOption) {
+              select.value = deliveredOption.value;
+              select.dispatchEvent(new Event("change", { bubbles: true }));
+              break;
             }
-          }, dateTypeStatus.optionValue);
+          }
+        });
 
-          // Wait for navigation to complete
-          await navigationPromise;
-        } catch (navError) {
-          // Navigation might timeout or context destroyed - that's OK, just wait for page to settle
-          console.log(`    Navigation handling: ${navError.message.substring(0, 50)}...`);
-          await new Promise(r => setTimeout(r, 2000));
+        // Wait for any navigation triggered by Date Type change
+        try {
+          await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 10000 });
+        } catch (e) {
+          // Navigation may not occur, that's fine
+          await new Promise(r => setTimeout(r, 1000));
         }
 
         // Wait for page to be fully ready after navigation
