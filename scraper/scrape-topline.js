@@ -377,15 +377,14 @@ async function scrapeAnalystStats(page, weeks, existingUtilization = null) {
   for (const fullName of ALL_ANALYSTS) {
     const firstName = fullName.split(" ")[0];
 
+    // Define these outside try block so they're accessible in catch for retry
+    const weekIdx = latestWeekIdx;
+    const week = latestWeek;
+    const fromValue = formatDateForInput(week.start);
+    const toValue = formatDateForInput(week.end);
+
     try {
       console.log(`\n--- Analyst: ${fullName} ---`);
-
-      // Only process the latest week
-      const weekIdx = latestWeekIdx;
-      const week = latestWeek;
-      const fromValue = formatDateForInput(week.start);
-      const toValue = formatDateForInput(week.end);
-
       console.log(`  Week ${weekIdx + 1}: ${week.label}`);
 
       // Set date range
