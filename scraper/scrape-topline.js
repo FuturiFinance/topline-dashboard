@@ -369,19 +369,24 @@ async function scrapeAnalystStats(page, weeks, existingUtilization = null) {
   console.log(`Date Type verification screenshot saved: ${dateTypeScreenshot}`);
 
   let isFirstSearch = true;
+  let successCount = 0;
+  let failCount = 0;
 
   // Loop through each analyst - only scrape the latest week
+  // Wrap each analyst in try/catch so one failure doesn't crash the whole run
   for (const fullName of ALL_ANALYSTS) {
     const firstName = fullName.split(" ")[0];
-    console.log(`\n--- Analyst: ${fullName} ---`);
 
-    // Only process the latest week
-    const weekIdx = latestWeekIdx;
-    const week = latestWeek;
-    const fromValue = formatDateForInput(week.start);
-    const toValue = formatDateForInput(week.end);
+    try {
+      console.log(`\n--- Analyst: ${fullName} ---`);
 
-    console.log(`  Week ${weekIdx + 1}: ${week.label}`);
+      // Only process the latest week
+      const weekIdx = latestWeekIdx;
+      const week = latestWeek;
+      const fromValue = formatDateForInput(week.start);
+      const toValue = formatDateForInput(week.end);
+
+      console.log(`  Week ${weekIdx + 1}: ${week.label}`);
 
       // Set date range
       await page.evaluate(({ startDate, endDate }) => {
@@ -465,12 +470,15 @@ async function scrapeAnalystStats(page, weeks, existingUtilization = null) {
 
       // Helper to setup page with correct Date Type, dates, and analyst
       const setupPageForSearch = async () => {
+        // Navigate to stats page
         await page.goto(STATS_URL, { waitUntil: "networkidle2", timeout: 30000 });
         await new Promise(r => setTimeout(r, 1000));
 
-        // Set Date Type to "Insights/Design Delivered"
+        // Set Date Type to "Insights/Design Delivered" - this may trigger a navigation
+        let dateTypeChanged = false;
         try {
-          await page.evaluate(() => {
+          // Use page.select if we can find the select element
+          const selectInfo = await page.evaluate(() => {
             const selects = document.querySelectorAll("select");
             for (const select of selects) {
               const options = [...select.options];
@@ -480,18 +488,34 @@ async function scrapeAnalystStats(page, weeks, existingUtilization = null) {
                 opt.text.toLowerCase().includes("delivered")
               );
               if (deliveredOption) {
-                select.value = deliveredOption.value;
-                select.dispatchEvent(new Event("change", { bubbles: true }));
-                break;
+                return { id: select.id, name: select.name, value: deliveredOption.value };
               }
             }
+            return null;
           });
+
+          if (selectInfo) {
+            // Try to use page.select which is more robust
+            const selector = selectInfo.id ? `#${selectInfo.id}` : selectInfo.name ? `select[name="${selectInfo.name}"]` : 'select';
+            await page.select(selector, selectInfo.value);
+            dateTypeChanged = true;
+          }
         } catch (e) {
-          // Context may be destroyed by navigation, that's expected
+          // Context destroyed by navigation - this is expected
+          console.log(`      Date Type change triggered navigation (expected)`);
         }
 
-        // Wait for page to settle after Date Type change (it may navigate)
-        await page.waitForSelector('input[type="date"]', { timeout: 15000 });
+        // Wait for page to be ready - navigation may have occurred
+        // Use a loop to keep trying until page is stable
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            await page.waitForSelector('input[type="date"]', { timeout: 5000 });
+            break;
+          } catch (e) {
+            // Page still loading, wait and retry
+            await new Promise(r => setTimeout(r, 2000));
+          }
+        }
         await new Promise(r => setTimeout(r, 500));
 
         // Set dates
@@ -777,30 +801,48 @@ async function scrapeAnalystStats(page, weeks, existingUtilization = null) {
       analystUtilization[firstName].weekly[weekIdx] = weekData;
       console.log(`    >>> SCRAPED: ${fullName} | Week ${weekIdx + 1} | Requests: ${weekData.totalRequests}, Reports: ${weekData.totalReports}, Designs: ${weekData.totalDesigns} | AvgReqTime: ${weekData.avgRequestTime}min, AvgDesignTime: ${weekData.avgDesignTime}min`);
 
+      successCount++;
+
       // Clear analyst filter for next iteration - click the X on the tag
-      await page.evaluate(() => {
-        // Find and click the X button next to the analyst name tag
-        const removeButtons = document.querySelectorAll('[class*="remove"], [aria-label*="Remove"], .close, .btn-close');
-        removeButtons.forEach(btn => {
-          // Only click if it's in the Analysts section
-          const parent = btn.closest('tr, div');
-          if (parent && parent.textContent.includes('Analyst')) {
-            btn.click();
-          }
+      try {
+        await page.evaluate(() => {
+          const removeButtons = document.querySelectorAll('[class*="remove"], [aria-label*="Remove"], .close, .btn-close');
+          removeButtons.forEach(btn => {
+            const parent = btn.closest('tr, div');
+            if (parent && parent.textContent.includes('Analyst')) {
+              btn.click();
+            }
+          });
+          const spans = document.querySelectorAll('span');
+          spans.forEach(span => {
+            if (span.textContent.trim() === '×' || span.textContent.trim() === 'x') {
+              span.click();
+            }
+          });
         });
+        await new Promise(r => setTimeout(r, 300));
+      } catch (clearError) {
+        // Clearing failed, will reload page on next analyst
+        console.log(`    Warning: Could not clear analyst filter`);
+      }
 
-        // Also try clicking the × character directly
-        const spans = document.querySelectorAll('span');
-        spans.forEach(span => {
-          if (span.textContent.trim() === '×' || span.textContent.trim() === 'x') {
-            span.click();
-          }
-        });
-      });
+    } catch (analystError) {
+      // Log error and continue to next analyst
+      failCount++;
+      console.log(`    ERROR scraping ${fullName}: ${analystError.message}`);
+      console.log(`    Skipping to next analyst...`);
 
-      await new Promise(r => setTimeout(r, 300));
+      // Try to recover by reloading the page for the next analyst
+      try {
+        await page.goto(STATS_URL, { waitUntil: "networkidle2", timeout: 30000 });
+        await new Promise(r => setTimeout(r, 1000));
+      } catch (reloadError) {
+        console.log(`    Warning: Page reload failed, continuing anyway`);
+      }
+    }
   }
 
+  console.log(`\n=== Pull 2 Complete: ${successCount} succeeded, ${failCount} failed ===`);
   return analystUtilization;
 }
 
