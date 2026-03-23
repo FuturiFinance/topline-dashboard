@@ -1,9 +1,6 @@
 name: Weekly Dashboard Update
 
 on:
-  push:
-    branches:
-      - main
   schedule:
     # Run every Monday at 7AM UTC (2AM EST / 3AM EDT)
     - cron: '0 7 * * 1'
@@ -23,39 +20,24 @@ jobs:
           node-version: '20'
 
       - name: Install scraper dependencies
-        if: github.event_name == 'schedule'
         working-directory: ./scraper
         run: npm ci
 
       - name: Install Puppeteer browser
-        if: github.event_name == 'schedule'
         working-directory: ./scraper
         run: npx puppeteer browsers install chrome
 
       - name: Run scraper
-        if: github.event_name == 'schedule'
         working-directory: ./scraper
         env:
           TOPLINE_EMAIL: ${{ secrets.TOPLINE_EMAIL }}
           TOPLINE_PASSWORD: ${{ secrets.TOPLINE_PASSWORD }}
         run: node scrape-topline.js
 
-      - name: Install dashboard dependencies
-        working-directory: ./dashboard
-        run: npm ci
-
-      - name: Build dashboard
-        working-directory: ./dashboard
-        run: npm run build
-
-      - name: Deploy to Vercel
-        working-directory: ./dashboard
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      - name: Commit and push updated data
         run: |
-          npm i -g vercel
-          vercel pull --yes --environment=production --token=$VERCEL_TOKEN
-          vercel build --prod --token=$VERCEL_TOKEN
-          vercel deploy --prebuilt --prod --token=$VERCEL_TOKEN
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard/public/data/topline-stats.json
+          git diff --staged --quiet || git commit -m "Update TopLine data [automated]"
+          git push
