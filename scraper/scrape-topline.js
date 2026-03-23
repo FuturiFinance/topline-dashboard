@@ -419,6 +419,24 @@ async function scrapeAnalystStats(page, weeks) {
 
       await new Promise(r => setTimeout(r, 300));
 
+      // Get current values before clicking Search (to detect when they change)
+      const previousValues = await page.evaluate(() => {
+        const tables = document.querySelectorAll("table");
+        for (const table of tables) {
+          const headerRow = table.querySelector("tr");
+          if (!headerRow) continue;
+          const headers = [...headerRow.querySelectorAll("th, td")].map(h => h.textContent.trim().toLowerCase());
+          if (headers.some(h => h.includes("total requests"))) {
+            const rows = table.querySelectorAll("tr");
+            if (rows.length >= 2) {
+              const cells = [...rows[1].querySelectorAll("td")];
+              return cells.map(c => c.textContent.trim()).join("|");
+            }
+          }
+        }
+        return "";
+      });
+
       // Click Search button
       await page.evaluate(() => {
         const buttons = [...document.querySelectorAll("button, input[type='submit']")];
@@ -429,7 +447,43 @@ async function scrapeAnalystStats(page, weeks) {
         if (searchBtn) searchBtn.click();
       });
 
-      await new Promise(r => setTimeout(r, 2000));
+      // Wait for data to change (up to 10 seconds)
+      let dataChanged = false;
+      const maxWaitTime = 10000;
+      const startTime = Date.now();
+
+      while (!dataChanged && Date.now() - startTime < maxWaitTime) {
+        await new Promise(r => setTimeout(r, 500));
+
+        const currentValues = await page.evaluate(() => {
+          const tables = document.querySelectorAll("table");
+          for (const table of tables) {
+            const headerRow = table.querySelector("tr");
+            if (!headerRow) continue;
+            const headers = [...headerRow.querySelectorAll("th, td")].map(h => h.textContent.trim().toLowerCase());
+            if (headers.some(h => h.includes("total requests"))) {
+              const rows = table.querySelectorAll("tr");
+              if (rows.length >= 2) {
+                const cells = [...rows[1].querySelectorAll("td")];
+                return cells.map(c => c.textContent.trim()).join("|");
+              }
+            }
+          }
+          return "";
+        });
+
+        // Check if values changed OR if this is the first analyst (no previous values)
+        if (currentValues !== previousValues || previousValues === "") {
+          dataChanged = true;
+        }
+      }
+
+      if (!dataChanged) {
+        console.log(`    WARNING: Data may not have refreshed (waited ${maxWaitTime}ms)`);
+      }
+
+      // Extra wait to ensure data is fully loaded
+      await new Promise(r => setTimeout(r, 1000));
 
       // Take screenshot on first search for verification
       if (isFirstSearch) {
@@ -530,7 +584,7 @@ async function scrapeAnalystStats(page, weeks) {
       }
 
       analystUtilization[firstName].weekly[weekIdx] = weekData;
-      console.log(`    Req: ${weekData.totalRequests}, Reports: ${weekData.totalReports}, Designs: ${weekData.totalDesigns}, AvgReqTime: ${weekData.avgRequestTime}min, AvgReportTime: ${weekData.avgReportTime}min`);
+      console.log(`    >>> SCRAPED: ${fullName} | Week ${weekIdx + 1} | Requests: ${weekData.totalRequests}, Reports: ${weekData.totalReports}, Designs: ${weekData.totalDesigns} | AvgReqTime: ${weekData.avgRequestTime}min, AvgDesignTime: ${weekData.avgDesignTime}min`);
 
       // Clear analyst filter for next iteration - click the X on the tag
       await page.evaluate(() => {
