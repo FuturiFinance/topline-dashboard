@@ -274,28 +274,51 @@ async function downloadWeekData(page, client, week, filesBefore, isFirstDownload
 
 // --- Pull 2: Per-Analyst Stats Scraper ---
 
-async function scrapeAnalystStats(page, weeks) {
-  console.log("\n\n=== PULL 2: Per-Analyst Stats ===");
-  console.log(`Scraping ${ALL_ANALYSTS.length} analysts × ${weeks.length} weeks = ${ALL_ANALYSTS.length * weeks.length} pulls\n`);
+async function scrapeAnalystStats(page, weeks, existingUtilization = null) {
+  // Only scrape the most recent week to reduce pulls and avoid navigation crashes
+  const latestWeekIdx = weeks.length - 1;
+  const latestWeek = weeks[latestWeekIdx];
+
+  console.log("\n\n=== PULL 2: Per-Analyst Stats (Latest Week Only) ===");
+  console.log(`Scraping ${ALL_ANALYSTS.length} analysts × 1 week = ${ALL_ANALYSTS.length} pulls`);
+  console.log(`Latest week: ${latestWeek.label}\n`);
 
   const analystUtilization = {};
 
-  // Initialize structure for all analysts
+  // Initialize structure for all analysts, preserving existing data for prior weeks
   ALL_ANALYSTS.forEach(fullName => {
-    // Extract first name for matching with dashboard
     const firstName = fullName.split(" ")[0];
-    analystUtilization[firstName] = {
-      fullName,
-      team: RADIO_ANALYSTS.includes(fullName) ? "radio" : "tv",
-      weekly: weeks.map(() => ({
-        totalRequests: 0,
-        totalReports: 0,
-        totalDesigns: 0,
-        avgRequestTime: 0,
-        avgReportTime: 0,
-        avgDesignTime: 0,
-      })),
-    };
+    const existing = existingUtilization?.[firstName];
+
+    if (existing && existing.weekly && existing.weekly.length === weeks.length) {
+      // Preserve existing data, we'll update only the latest week
+      analystUtilization[firstName] = {
+        fullName,
+        team: RADIO_ANALYSTS.includes(fullName) ? "radio" : "tv",
+        weekly: existing.weekly.map((w, idx) => idx === latestWeekIdx ? {
+          totalRequests: 0,
+          totalReports: 0,
+          totalDesigns: 0,
+          avgRequestTime: 0,
+          avgReportTime: 0,
+          avgDesignTime: 0,
+        } : { ...w }),
+      };
+    } else {
+      // No existing data, initialize all weeks
+      analystUtilization[firstName] = {
+        fullName,
+        team: RADIO_ANALYSTS.includes(fullName) ? "radio" : "tv",
+        weekly: weeks.map(() => ({
+          totalRequests: 0,
+          totalReports: 0,
+          totalDesigns: 0,
+          avgRequestTime: 0,
+          avgReportTime: 0,
+          avgDesignTime: 0,
+        })),
+      };
+    }
   });
 
   // Navigate to stats page
@@ -347,17 +370,18 @@ async function scrapeAnalystStats(page, weeks) {
 
   let isFirstSearch = true;
 
-  // Loop through each analyst and each week
+  // Loop through each analyst - only scrape the latest week
   for (const fullName of ALL_ANALYSTS) {
     const firstName = fullName.split(" ")[0];
     console.log(`\n--- Analyst: ${fullName} ---`);
 
-    for (let weekIdx = 0; weekIdx < weeks.length; weekIdx++) {
-      const week = weeks[weekIdx];
-      const fromValue = formatDateForInput(week.start);
-      const toValue = formatDateForInput(week.end);
+    // Only process the latest week
+    const weekIdx = latestWeekIdx;
+    const week = latestWeek;
+    const fromValue = formatDateForInput(week.start);
+    const toValue = formatDateForInput(week.end);
 
-      console.log(`  Week ${weekIdx + 1}: ${week.label}`);
+    console.log(`  Week ${weekIdx + 1}: ${week.label}`);
 
       // Set date range
       await page.evaluate(({ startDate, endDate }) => {
@@ -727,7 +751,6 @@ async function scrapeAnalystStats(page, weeks) {
       });
 
       await new Promise(r => setTimeout(r, 300));
-    }
   }
 
   return analystUtilization;
@@ -948,11 +971,23 @@ async function run() {
     });
 
     // ========== PULL 2: Per-Analyst Utilization Stats ==========
-    const analystUtilization = await scrapeAnalystStats(page, weeks);
+    // Load existing utilization data to preserve prior weeks
+    const outputPath = path.join(OUTPUT_DIR, "topline-stats.json");
+    let existingUtilization = null;
+    if (fs.existsSync(outputPath)) {
+      try {
+        const existingData = JSON.parse(fs.readFileSync(outputPath, "utf-8"));
+        existingUtilization = existingData.utilization;
+        console.log("Loaded existing utilization data for prior weeks");
+      } catch (e) {
+        console.log("Could not load existing data, will scrape all weeks fresh");
+      }
+    }
+
+    const analystUtilization = await scrapeAnalystStats(page, weeks, existingUtilization);
     stats.utilization = analystUtilization;
 
     // Save JSON
-    const outputPath = path.join(OUTPUT_DIR, "topline-stats.json");
     fs.writeFileSync(outputPath, JSON.stringify(stats, null, 2));
     console.log(`\nOutput saved to: ${outputPath}`);
 
