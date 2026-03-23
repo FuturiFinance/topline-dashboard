@@ -312,9 +312,11 @@ async function scrapeAnalystStats(page, weeks) {
       // Log all options for debugging
       console.log("Select options:", options.map(o => o.text).join(", "));
 
-      // Look specifically for "Insights/Design Delivered"
+      // Look specifically for "Insights/Design Delivered" - must have all three words
       const deliveredOption = options.find(opt =>
-        opt.text.toLowerCase().includes("insights") && opt.text.toLowerCase().includes("delivered")
+        opt.text.toLowerCase().includes("insights") &&
+        opt.text.toLowerCase().includes("design") &&
+        opt.text.toLowerCase().includes("delivered")
       );
 
       if (deliveredOption) {
