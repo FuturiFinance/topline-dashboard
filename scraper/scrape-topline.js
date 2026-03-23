@@ -463,64 +463,38 @@ async function scrapeAnalystStats(page, weeks, existingUtilization = null) {
 
       await new Promise(r => setTimeout(r, 300));
 
-      // Re-verify and set Date Type before each search (in case page reset it)
-      const dateTypeStatus = await page.evaluate(() => {
-        const selects = document.querySelectorAll("select");
-        for (const select of selects) {
-          const options = [...select.options];
-          const deliveredOption = options.find(opt =>
-            opt.text.toLowerCase().includes("insights") &&
-            opt.text.toLowerCase().includes("design") &&
-            opt.text.toLowerCase().includes("delivered")
-          );
-          if (deliveredOption) {
-            const wasCorrect = select.value === deliveredOption.value;
-            const selectedText = select.options[select.selectedIndex]?.text || "unknown";
-            return { wasCorrect, selectedText, value: select.value, needsChange: !wasCorrect, optionValue: deliveredOption.value };
-          }
-        }
-        return { found: false, needsChange: false };
-      });
-
-      // If Date Type needs to be changed, reload page with correct Date Type via URL
-      if (dateTypeStatus.needsChange) {
-        console.log(`    Date Type was reset, reloading page with correct settings...`);
-
-        // Navigate to stats page fresh with a clean state
+      // Helper to setup page with correct Date Type, dates, and analyst
+      const setupPageForSearch = async () => {
         await page.goto(STATS_URL, { waitUntil: "networkidle2", timeout: 30000 });
         await new Promise(r => setTimeout(r, 1000));
 
-        // Set Date Type first before anything else
-        await page.evaluate(() => {
-          const selects = document.querySelectorAll("select");
-          for (const select of selects) {
-            const options = [...select.options];
-            const deliveredOption = options.find(opt =>
-              opt.text.toLowerCase().includes("insights") &&
-              opt.text.toLowerCase().includes("design") &&
-              opt.text.toLowerCase().includes("delivered")
-            );
-            if (deliveredOption) {
-              select.value = deliveredOption.value;
-              select.dispatchEvent(new Event("change", { bubbles: true }));
-              break;
-            }
-          }
-        });
-
-        // Wait for any navigation triggered by Date Type change
+        // Set Date Type to "Insights/Design Delivered"
         try {
-          await page.waitForNavigation({ waitUntil: "networkidle2", timeout: 10000 });
+          await page.evaluate(() => {
+            const selects = document.querySelectorAll("select");
+            for (const select of selects) {
+              const options = [...select.options];
+              const deliveredOption = options.find(opt =>
+                opt.text.toLowerCase().includes("insights") &&
+                opt.text.toLowerCase().includes("design") &&
+                opt.text.toLowerCase().includes("delivered")
+              );
+              if (deliveredOption) {
+                select.value = deliveredOption.value;
+                select.dispatchEvent(new Event("change", { bubbles: true }));
+                break;
+              }
+            }
+          });
         } catch (e) {
-          // Navigation may not occur, that's fine
-          await new Promise(r => setTimeout(r, 1000));
+          // Context may be destroyed by navigation, that's expected
         }
 
-        // Wait for page to be fully ready after navigation
-        await page.waitForSelector('input[type="date"]', { timeout: 10000 });
+        // Wait for page to settle after Date Type change (it may navigate)
+        await page.waitForSelector('input[type="date"]', { timeout: 15000 });
         await new Promise(r => setTimeout(r, 500));
 
-        // Re-set dates after navigation (they may have been reset)
+        // Set dates
         await page.evaluate(({ startDate, endDate }) => {
           const inputs = document.querySelectorAll('input[type="date"]');
           if (inputs[0]) {
@@ -534,10 +508,9 @@ async function scrapeAnalystStats(page, weeks, existingUtilization = null) {
             inputs[1].dispatchEvent(new Event("change", { bubbles: true }));
           }
         }, { startDate: fromValue, endDate: toValue });
-
         await new Promise(r => setTimeout(r, 300));
 
-        // Re-select analyst after navigation
+        // Select analyst
         await page.evaluate((analystName) => {
           const selects = document.querySelectorAll("select");
           for (const select of selects) {
@@ -555,12 +528,87 @@ async function scrapeAnalystStats(page, weeks, existingUtilization = null) {
             }
           }
         }, fullName);
-
         await new Promise(r => setTimeout(r, 300));
+      };
+
+      // Check if Date Type needs to be changed
+      let dateTypeStatus;
+      try {
+        dateTypeStatus = await page.evaluate(() => {
+          const selects = document.querySelectorAll("select");
+          for (const select of selects) {
+            const options = [...select.options];
+            const deliveredOption = options.find(opt =>
+              opt.text.toLowerCase().includes("insights") &&
+              opt.text.toLowerCase().includes("design") &&
+              opt.text.toLowerCase().includes("delivered")
+            );
+            if (deliveredOption) {
+              const wasCorrect = select.value === deliveredOption.value;
+              return { wasCorrect, needsChange: !wasCorrect };
+            }
+          }
+          return { found: false, needsChange: true };
+        });
+      } catch (e) {
+        // Page context issue, need to reload
+        dateTypeStatus = { needsChange: true };
+      }
+
+      // If Date Type needs to be changed, reload page fresh
+      if (dateTypeStatus.needsChange) {
+        console.log(`    Date Type was reset, reloading page fresh...`);
+        await setupPageForSearch();
       } else if (isFirstSearch) {
-        console.log(`    Date Type check: "${dateTypeStatus.selectedText}" (already correct)`);
+        console.log(`    Date Type already correct`);
       }
       await new Promise(r => setTimeout(r, 200));
+
+      // Now we need to set dates and analyst if we didn't reload
+      if (!dateTypeStatus.needsChange) {
+        // Set dates
+        await page.evaluate(({ startDate, endDate }) => {
+          const inputs = document.querySelectorAll('input[type="date"]');
+          if (inputs[0]) {
+            inputs[0].value = startDate;
+            inputs[0].dispatchEvent(new Event("input", { bubbles: true }));
+            inputs[0].dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          if (inputs[1]) {
+            inputs[1].value = endDate;
+            inputs[1].dispatchEvent(new Event("input", { bubbles: true }));
+            inputs[1].dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        }, { startDate: fromValue, endDate: toValue });
+        await new Promise(r => setTimeout(r, 300));
+
+        // Clear any previous analyst selection
+        await page.evaluate(() => {
+          const closeButtons = document.querySelectorAll('[class*="multiValue"] [class*="remove"], .react-select__multi-value__remove, [aria-label="Remove"]');
+          closeButtons.forEach(btn => btn.click());
+        });
+        await new Promise(r => setTimeout(r, 200));
+
+        // Select analyst
+        await page.evaluate((analystName) => {
+          const selects = document.querySelectorAll("select");
+          for (const select of selects) {
+            const options = [...select.options];
+            const analystOption = options.find(opt =>
+              opt.text.trim() === analystName || opt.text.includes(analystName)
+            );
+            if (analystOption &&
+                !analystOption.text.toLowerCase().includes("submitted") &&
+                !analystOption.text.toLowerCase().includes("delivered") &&
+                !analystOption.text.toLowerCase().includes("insights")) {
+              select.value = analystOption.value;
+              select.dispatchEvent(new Event("change", { bubbles: true }));
+              break;
+            }
+          }
+        }, fullName);
+        await new Promise(r => setTimeout(r, 300));
+      }
 
       // Get current values before clicking Search (to detect when they change)
       const previousValues = await page.evaluate(() => {
