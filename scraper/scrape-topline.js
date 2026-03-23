@@ -439,6 +439,36 @@ async function scrapeAnalystStats(page, weeks) {
 
       await new Promise(r => setTimeout(r, 300));
 
+      // Re-verify and set Date Type before each search (in case page reset it)
+      const dateTypeStatus = await page.evaluate(() => {
+        const selects = document.querySelectorAll("select");
+        for (const select of selects) {
+          const options = [...select.options];
+          const deliveredOption = options.find(opt =>
+            opt.text.toLowerCase().includes("insights") &&
+            opt.text.toLowerCase().includes("design") &&
+            opt.text.toLowerCase().includes("delivered")
+          );
+          if (deliveredOption) {
+            const wasCorrect = select.value === deliveredOption.value;
+            if (!wasCorrect) {
+              select.value = deliveredOption.value;
+              select.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+            const selectedText = select.options[select.selectedIndex]?.text || "unknown";
+            return { wasCorrect, selectedText, value: select.value };
+          }
+        }
+        return { found: false };
+      });
+
+      if (isFirstSearch) {
+        console.log(`    Date Type check: "${dateTypeStatus.selectedText}" (was already correct: ${dateTypeStatus.wasCorrect})`);
+      } else if (!dateTypeStatus.wasCorrect) {
+        console.log(`    Date Type was reset, re-selected: "${dateTypeStatus.selectedText}"`);
+      }
+      await new Promise(r => setTimeout(r, 200));
+
       // Get current values before clicking Search (to detect when they change)
       const previousValues = await page.evaluate(() => {
         const tables = document.querySelectorAll("table");
