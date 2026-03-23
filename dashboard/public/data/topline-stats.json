@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-23T13:52:06.658Z",
+  "generatedAt": "2026-03-23T13:58:19.405Z",
   "weeks": [
     "02/23/2026 - 03/01/2026",
     "03/02/2026 - 03/08/2026",
@@ -142,10 +142,10 @@
         319,
         338,
         269,
-        326
+        327
       ],
       "fourWeekAvg": 313,
-      "weekOverWeek": 21
+      "weekOverWeek": 22
     }
   },
   "deliverables": {
@@ -1106,12 +1106,12 @@
           "avgDesignTime": 78.1
         },
         {
-          "totalRequests": 0,
-          "totalReports": 0,
-          "totalDesigns": 0,
-          "avgRequestTime": 0,
+          "totalRequests": 25,
+          "totalReports": 89,
+          "totalDesigns": 18,
+          "avgRequestTime": 23,
           "avgReportTime": 0,
-          "avgDesignTime": 0
+          "avgDesignTime": 61
         }
       ]
     },
