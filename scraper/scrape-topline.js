@@ -827,17 +827,142 @@ async function scrapeAnalystStats(page, weeks, existingUtilization = null) {
       }
 
     } catch (analystError) {
-      // Log error and continue to next analyst
-      failCount++;
-      console.log(`    ERROR scraping ${fullName}: ${analystError.message}`);
-      console.log(`    Skipping to next analyst...`);
+      // First attempt failed - retry once after reloading page
+      console.log(`    ERROR (attempt 1): ${analystError.message}`);
+      console.log(`    Waiting 5 seconds and retrying...`);
 
-      // Try to recover by reloading the page for the next analyst
+      await new Promise(r => setTimeout(r, 5000));
+
       try {
+        // Reload page fresh
         await page.goto(STATS_URL, { waitUntil: "networkidle2", timeout: 30000 });
         await new Promise(r => setTimeout(r, 1000));
-      } catch (reloadError) {
-        console.log(`    Warning: Page reload failed, continuing anyway`);
+
+        // Set Date Type
+        await page.evaluate(() => {
+          const selects = document.querySelectorAll("select");
+          for (const select of selects) {
+            const options = [...select.options];
+            const deliveredOption = options.find(opt =>
+              opt.text.toLowerCase().includes("insights") &&
+              opt.text.toLowerCase().includes("design") &&
+              opt.text.toLowerCase().includes("delivered")
+            );
+            if (deliveredOption) {
+              select.value = deliveredOption.value;
+              select.dispatchEvent(new Event("change", { bubbles: true }));
+              break;
+            }
+          }
+        });
+        await page.waitForSelector('input[type="date"]', { timeout: 10000 });
+        await new Promise(r => setTimeout(r, 500));
+
+        // Set dates
+        await page.evaluate(({ startDate, endDate }) => {
+          const inputs = document.querySelectorAll('input[type="date"]');
+          if (inputs[0]) {
+            inputs[0].value = startDate;
+            inputs[0].dispatchEvent(new Event("change", { bubbles: true }));
+          }
+          if (inputs[1]) {
+            inputs[1].value = endDate;
+            inputs[1].dispatchEvent(new Event("change", { bubbles: true }));
+          }
+        }, { startDate: fromValue, endDate: toValue });
+        await new Promise(r => setTimeout(r, 300));
+
+        // Select analyst
+        await page.evaluate((analystName) => {
+          const selects = document.querySelectorAll("select");
+          for (const select of selects) {
+            const options = [...select.options];
+            const analystOption = options.find(opt =>
+              (opt.text.trim() === analystName || opt.text.includes(analystName)) &&
+              !opt.text.toLowerCase().includes("submitted") &&
+              !opt.text.toLowerCase().includes("delivered")
+            );
+            if (analystOption) {
+              select.value = analystOption.value;
+              select.dispatchEvent(new Event("change", { bubbles: true }));
+              break;
+            }
+          }
+        }, fullName);
+        await new Promise(r => setTimeout(r, 300));
+
+        // Click Search
+        await page.evaluate(() => {
+          const buttons = [...document.querySelectorAll("button, input[type='submit']")];
+          const searchBtn = buttons.find(btn =>
+            btn.textContent?.toLowerCase().includes("search") ||
+            btn.value?.toLowerCase().includes("search")
+          );
+          if (searchBtn) searchBtn.click();
+        });
+        await new Promise(r => setTimeout(r, 2000));
+
+        // Scrape data
+        const retryData = await page.evaluate(() => {
+          const tables = document.querySelectorAll("table");
+          for (const table of tables) {
+            const headerRow = table.querySelector("tr");
+            if (!headerRow) continue;
+            const headers = [...headerRow.querySelectorAll("th, td")].map(h => h.textContent.trim().toLowerCase());
+            if (headers.some(h => h.includes("total requests"))) {
+              const rows = table.querySelectorAll("tr");
+              if (rows.length >= 2) {
+                const cells = [...rows[1].querySelectorAll("td")];
+                const result = { totalRequests: 0, totalReports: 0, totalDesigns: 0, avgRequestTime: "", avgDesignTime: "" };
+                headers.forEach((header, idx) => {
+                  const cellText = cells[idx]?.textContent.trim() || "";
+                  if (header.includes("total requests")) result.totalRequests = parseInt(cellText) || 0;
+                  else if (header.includes("total reports")) result.totalReports = parseInt(cellText) || 0;
+                  else if (header.includes("total designs")) result.totalDesigns = parseInt(cellText) || 0;
+                  else if (header.includes("average request")) result.avgRequestTime = cellText;
+                  else if (header.includes("average design")) result.avgDesignTime = cellText;
+                });
+                return { found: true, ...result };
+              }
+            }
+          }
+          return { found: false };
+        });
+
+        if (retryData.found) {
+          const parseTime = (str) => {
+            if (!str) return 0;
+            let mins = 0;
+            const h = str.match(/(\d+)\s*hour/i);
+            const m = str.match(/(\d+)\s*minute/i);
+            if (h) mins += parseInt(h[1]) * 60;
+            if (m) mins += parseInt(m[1]);
+            return Math.round(mins * 10) / 10;
+          };
+          analystUtilization[firstName].weekly[weekIdx] = {
+            totalRequests: retryData.totalRequests,
+            totalReports: retryData.totalReports,
+            totalDesigns: retryData.totalDesigns,
+            avgRequestTime: parseTime(retryData.avgRequestTime),
+            avgReportTime: 0,
+            avgDesignTime: parseTime(retryData.avgDesignTime),
+          };
+          console.log(`    >>> RETRY SUCCESS: ${fullName} | Requests: ${retryData.totalRequests}, Reports: ${retryData.totalReports}, Designs: ${retryData.totalDesigns}`);
+          successCount++;
+        } else {
+          throw new Error("Could not find data table on retry");
+        }
+      } catch (retryError) {
+        // Retry also failed, skip this analyst
+        failCount++;
+        console.log(`    ERROR (attempt 2): ${retryError.message}`);
+        console.log(`    Skipping ${fullName} after 2 failed attempts`);
+
+        // Reload page for next analyst
+        try {
+          await page.goto(STATS_URL, { waitUntil: "networkidle2", timeout: 30000 });
+          await new Promise(r => setTimeout(r, 1000));
+        } catch (e) {}
       }
     }
   }
