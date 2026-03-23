@@ -303,27 +303,45 @@ async function scrapeAnalystStats(page, weeks) {
   await page.goto(STATS_URL, { waitUntil: "networkidle2", timeout: 30000 });
   await new Promise(r => setTimeout(r, 1000));
 
-  // Set Date Type to 'Delivered' (for Insights/Design Delivered)
-  console.log("Setting Date Type to 'Delivered'...");
+  // Set Date Type to 'Insights/Design Delivered'
+  console.log("Setting Date Type to 'Insights/Design Delivered'...");
   const dateTypeSet = await page.evaluate(() => {
     const selects = document.querySelectorAll("select");
     for (const select of selects) {
       const options = [...select.options];
-      // Look for "Delivered" option in the Date Type dropdown
+      // Log all options for debugging
+      console.log("Select options:", options.map(o => o.text).join(", "));
+
+      // Look specifically for "Insights/Design Delivered"
       const deliveredOption = options.find(opt =>
-        opt.text.toLowerCase().includes("delivered")
+        opt.text.toLowerCase().includes("insights") && opt.text.toLowerCase().includes("delivered")
       );
+
       if (deliveredOption) {
         select.value = deliveredOption.value;
         select.dispatchEvent(new Event("change", { bubbles: true }));
-        return { found: true, text: deliveredOption.text };
+        return { found: true, text: deliveredOption.text, value: deliveredOption.value };
       }
     }
     return { found: false };
   });
-  console.log(`Date Type set: ${dateTypeSet.found ? dateTypeSet.text : "NOT FOUND"}`);
+
+  if (dateTypeSet.found) {
+    console.log(`Date Type set to: "${dateTypeSet.text}" (value: ${dateTypeSet.value})`);
+  } else {
+    console.log("WARNING: Could not find 'Insights/Design Delivered' option!");
+    // Take screenshot to debug
+    const debugPath = path.join(DOWNLOAD_DIR, "debug-date-type.png");
+    await page.screenshot({ path: debugPath, fullPage: true });
+    console.log(`Debug screenshot saved: ${debugPath}`);
+  }
 
   await new Promise(r => setTimeout(r, 500));
+
+  // Take verification screenshot of the page with Date Type set
+  const dateTypeScreenshot = path.join(DOWNLOAD_DIR, "date-type-verification.png");
+  await page.screenshot({ path: dateTypeScreenshot, fullPage: true });
+  console.log(`Date Type verification screenshot saved: ${dateTypeScreenshot}`);
 
   let isFirstSearch = true;
 
