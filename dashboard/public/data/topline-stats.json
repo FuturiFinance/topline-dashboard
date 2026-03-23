@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-23T12:27:49.097Z",
+  "generatedAt": "2026-03-23T12:34:12.917Z",
   "weeks": [
     "02/23/2026 - 03/01/2026",
     "03/02/2026 - 03/08/2026",
@@ -142,9 +142,9 @@
         319,
         338,
         269,
-        319
+        320
       ],
-      "fourWeekAvg": 311,
+      "fourWeekAvg": 312,
       "weekOverWeek": 19
     }
   },
@@ -702,12 +702,12 @@
       "team": "radio",
       "weekly": [
         {
-          "totalRequests": 3,
-          "totalReports": 18,
-          "totalDesigns": 0,
-          "avgRequestTime": 76.9,
-          "avgReportTime": 12.8,
-          "avgDesignTime": 0
+          "totalRequests": 26,
+          "totalReports": 113,
+          "totalDesigns": 20,
+          "avgRequestTime": 85.2,
+          "avgReportTime": 19.6,
+          "avgDesignTime": 83.5
         },
         {
           "totalRequests": 26,
