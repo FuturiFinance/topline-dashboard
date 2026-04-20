@@ -1,204 +1,204 @@
 {
-  "generatedAt": "2026-04-13T08:59:48.810Z",
+  "generatedAt": "2026-04-20T09:05:36.102Z",
   "weeks": [
-    "03/16/2026 - 03/22/2026",
     "03/23/2026 - 03/29/2026",
     "03/30/2026 - 04/05/2026",
-    "04/06/2026 - 04/12/2026"
+    "04/06/2026 - 04/12/2026",
+    "04/13/2026 - 04/19/2026"
   ],
   "researchStats": {
     "Research Requests submitted - Analysts": {
       "weekly": [
-        392,
         400,
         314,
-        393
+        393,
+        350
       ],
-      "fourWeekAvg": 375,
-      "weekOverWeek": 25
+      "fourWeekAvg": 364,
+      "weekOverWeek": -11
     },
     "Reports created - Analysts": {
       "weekly": [
-        1111,
         1032,
         721,
-        1076
+        1076,
+        1129
       ],
-      "fourWeekAvg": 985,
-      "weekOverWeek": 49
+      "fourWeekAvg": 990,
+      "weekOverWeek": 5
     },
     "TOTAL RESEARCH REQUESTS submitted": {
       "weekly": [
-        10436,
         10458,
         9897,
-        9550
+        9550,
+        10018
       ],
-      "fourWeekAvg": 10085,
-      "weekOverWeek": -4
+      "fourWeekAvg": 9981,
+      "weekOverWeek": 5
     },
     "TOTAL REPORTS created": {
       "weekly": [
-        18073,
         16181,
         15800,
-        15427
+        15427,
+        16918
       ],
-      "fourWeekAvg": 16370,
-      "weekOverWeek": -2
+      "fourWeekAvg": 16082,
+      "weekOverWeek": 10
     },
     "PERSONALITY completed": {
       "weekly": [
-        8174,
         8402,
         7995,
-        7498
+        7498,
+        8036
       ],
-      "fourWeekAvg": 8017,
-      "weekOverWeek": -6
+      "fourWeekAvg": 7983,
+      "weekOverWeek": 7
     },
     "DIGITAL ANALYSIS completed": {
       "weekly": [
-        311,
         321,
         272,
-        317
+        317,
+        272
       ],
-      "fourWeekAvg": 305,
-      "weekOverWeek": 17
+      "fourWeekAvg": 296,
+      "weekOverWeek": -14
     },
     "DIGITAL INTELLIGENCE completed": {
       "weekly": [
-        238,
         260,
         237,
-        284
+        284,
+        210
       ],
-      "fourWeekAvg": 255,
-      "weekOverWeek": 20
+      "fourWeekAvg": 248,
+      "weekOverWeek": -26
     },
     "MAPIT delivered": {
       "weekly": [
-        244,
         260,
         242,
-        289
+        289,
+        207
       ],
-      "fourWeekAvg": 259,
-      "weekOverWeek": 19
+      "fourWeekAvg": 250,
+      "weekOverWeek": -28
     },
     "INSIGHTS delivered": {
       "weekly": [
-        17,
         12,
         13,
-        9
+        9,
+        12
       ],
-      "fourWeekAvg": 13,
-      "weekOverWeek": -31
+      "fourWeekAvg": 12,
+      "weekOverWeek": 33
     },
     "INFOGRAPHICS delivered": {
       "weekly": [
-        52,
         29,
         19,
-        28
+        28,
+        25
       ],
-      "fourWeekAvg": 32,
-      "weekOverWeek": 47
+      "fourWeekAvg": 25,
+      "weekOverWeek": -11
     },
     "PRESENTATIONS delivered": {
       "weekly": [
-        1051,
         802,
         796,
-        799
+        799,
+        898
       ],
-      "fourWeekAvg": 862,
-      "weekOverWeek": 0
+      "fourWeekAvg": 824,
+      "weekOverWeek": 12
     },
     "SNAPSHOTS delivered": {
       "weekly": [
-        35,
         62,
         80,
-        67
+        67,
+        60
       ],
-      "fourWeekAvg": 61,
-      "weekOverWeek": -16
+      "fourWeekAvg": 67,
+      "weekOverWeek": -10
     },
     "RESOURCES delivered": {
       "weekly": [
-        151,
         185,
         116,
-        155
+        155,
+        144
       ],
-      "fourWeekAvg": 152,
-      "weekOverWeek": 34
+      "fourWeekAvg": 150,
+      "weekOverWeek": -7
     },
     "Sent to Design": {
       "weekly": [
-        366,
         304,
         208,
-        270
+        337,
+        210
       ],
-      "fourWeekAvg": 287,
-      "weekOverWeek": 30
+      "fourWeekAvg": 265,
+      "weekOverWeek": -38
     }
   },
   "deliverables": {
     "total": {
       "Personality prep": {
         "weekly": [
-          8174,
           8402,
           7995,
-          7498
+          7498,
+          8036
         ],
-        "fourWeekAvg": 8017,
-        "weekOverWeek": -6
+        "fourWeekAvg": 7983,
+        "weekOverWeek": 7
       },
       "Digital Allocation": {
         "weekly": [
-          549,
           581,
           509,
-          601
+          601,
+          482
         ],
-        "fourWeekAvg": 560,
-        "weekOverWeek": 18
+        "fourWeekAvg": 543,
+        "weekOverWeek": -20
       },
       "Map (A)": {
         "weekly": [
           3,
-          3,
           6,
+          3,
           3
         ],
         "fourWeekAvg": 4,
-        "weekOverWeek": -50
+        "weekOverWeek": 0
       },
       "Map Total": {
         "weekly": [
-          244,
           260,
           242,
-          289
+          289,
+          207
         ],
-        "fourWeekAvg": 259,
-        "weekOverWeek": 19
+        "fourWeekAvg": 250,
+        "weekOverWeek": -28
       },
       "Research by Analysts (Average minutes)": {
         "weekly": [
-          1111,
           1032,
           721,
-          1076
+          1076,
+          1129
         ],
-        "fourWeekAvg": 985,
-        "weekOverWeek": 49
+        "fourWeekAvg": 990,
+        "weekOverWeek": 5
       }
     },
     "hours": {
@@ -225,145 +225,145 @@
       "Map (A)": {
         "weekly": [
           0,
-          0,
           0.5,
-          0
+          0,
+          0.5
         ],
-        "fourWeekAvg": 0.1,
-        "weekOverWeek": -100
+        "fourWeekAvg": 0.3,
+        "weekOverWeek": null
       },
       "Map Total": {
         "weekly": [
           0,
-          0,
           0.5,
-          0
+          0,
+          0.5
         ],
-        "fourWeekAvg": 0.1,
-        "weekOverWeek": -100
+        "fourWeekAvg": 0.3,
+        "weekOverWeek": null
       },
       "Research by Analysts (Average minutes)": {
         "weekly": [
+          20,
+          20,
           18,
-          20,
-          20,
-          18
+          17
         ],
-        "fourWeekAvg": 19,
-        "weekOverWeek": -10
+        "fourWeekAvg": 18.8,
+        "weekOverWeek": -6
       }
     }
   },
   "analystStats": {
     "Adam": {
       "reportsCompleted": [
-        115,
         130,
         109,
-        112
+        112,
+        173
       ],
       "avgMinutes": [
-        16,
         18,
         12,
-        15
+        15,
+        9
       ],
       "pctOfTotal": [
-        10.4,
         12.6,
         15.1,
-        10.4
+        10.4,
+        15.3
       ],
-      "fourWeekAvg": 117,
-      "weekOverWeek": 3
+      "fourWeekAvg": 131,
+      "weekOverWeek": 54
     },
     "Alison": {
       "reportsCompleted": [
-        90,
         64,
         31,
-        51
+        51,
+        75
       ],
       "avgMinutes": [
-        3,
         8,
         5,
-        10
+        10,
+        4
       ],
       "pctOfTotal": [
-        8.1,
         6.2,
         4.3,
-        4.7
+        4.7,
+        6.6
       ],
-      "fourWeekAvg": 59,
-      "weekOverWeek": 65
+      "fourWeekAvg": 55,
+      "weekOverWeek": 47
     },
     "Amanda": {
       "reportsCompleted": [
-        35,
         69,
         39,
-        48
+        48,
+        52
       ],
       "avgMinutes": [
-        32,
         24,
         28,
-        25
+        25,
+        22
       ],
       "pctOfTotal": [
-        3.2,
         6.7,
         5.4,
-        4.5
+        4.5,
+        4.6
       ],
-      "fourWeekAvg": 48,
-      "weekOverWeek": 23
+      "fourWeekAvg": 52,
+      "weekOverWeek": 8
     },
     "Anthony": {
       "reportsCompleted": [
-        51,
         70,
         57,
-        85
+        85,
+        77
       ],
       "avgMinutes": [
-        27,
         25,
         24,
-        20
+        20,
+        21
       ],
       "pctOfTotal": [
-        4.6,
         6.8,
         7.9,
-        7.9
+        7.9,
+        6.8
       ],
-      "fourWeekAvg": 66,
-      "weekOverWeek": 49
+      "fourWeekAvg": 72,
+      "weekOverWeek": -9
     },
     "Carly": {
       "reportsCompleted": [
-        115,
         49,
         86,
-        142
+        142,
+        109
       ],
       "avgMinutes": [
-        14,
         23,
         21,
-        11
+        11,
+        18
       ],
       "pctOfTotal": [
-        10.4,
         4.7,
         11.9,
-        13.2
+        13.2,
+        9.7
       ],
-      "fourWeekAvg": 98,
-      "weekOverWeek": 65
+      "fourWeekAvg": 97,
+      "weekOverWeek": -23
     },
     "Cheryl": {
       "reportsCompleted": [
@@ -389,252 +389,252 @@
     },
     "Damaris": {
       "reportsCompleted": [
-        52,
         38,
         47,
-        40
-      ],
-      "avgMinutes": [
-        20,
-        17,
-        15,
-        18
-      ],
-      "pctOfTotal": [
-        4.7,
-        3.7,
-        6.5,
-        3.7
-      ],
-      "fourWeekAvg": 44,
-      "weekOverWeek": -15
-    },
-    "Hayley": {
-      "reportsCompleted": [
         40,
-        24,
-        13,
         39
       ],
       "avgMinutes": [
-        28,
-        27,
-        39,
-        28
+        17,
+        15,
+        18,
+        22
       ],
       "pctOfTotal": [
-        3.6,
+        3.7,
+        6.5,
+        3.7,
+        3.5
+      ],
+      "fourWeekAvg": 41,
+      "weekOverWeek": -2
+    },
+    "Hayley": {
+      "reportsCompleted": [
+        24,
+        13,
+        39,
+        23
+      ],
+      "avgMinutes": [
+        27,
+        39,
+        28,
+        33
+      ],
+      "pctOfTotal": [
         2.3,
         1.8,
-        3.6
+        3.6,
+        2
       ],
-      "fourWeekAvg": 29,
-      "weekOverWeek": 200
+      "fourWeekAvg": 25,
+      "weekOverWeek": -41
     },
     "Jeff": {
       "reportsCompleted": [
-        45,
         38,
         18,
-        33
-      ],
-      "avgMinutes": [
-        28,
-        20,
-        28,
+        33,
         26
       ],
+      "avgMinutes": [
+        20,
+        28,
+        26,
+        28
+      ],
       "pctOfTotal": [
-        4.1,
         3.7,
         2.5,
-        3.1
+        3.1,
+        2.3
       ],
-      "fourWeekAvg": 34,
-      "weekOverWeek": 83
+      "fourWeekAvg": 29,
+      "weekOverWeek": -21
     },
     "Jenn": {
       "reportsCompleted": [
-        90,
         40,
         69,
-        99
+        99,
+        96
       ],
       "avgMinutes": [
-        11,
         20,
         11,
-        8
+        8,
+        11
       ],
       "pctOfTotal": [
-        8.1,
         3.9,
         9.6,
-        9.2
+        9.2,
+        8.5
       ],
-      "fourWeekAvg": 75,
-      "weekOverWeek": 43
+      "fourWeekAvg": 76,
+      "weekOverWeek": -3
     },
     "Jordan": {
       "reportsCompleted": [
-        25,
         47,
         20,
-        32
+        32,
+        25
       ],
       "avgMinutes": [
-        42,
         27,
         51,
-        30
+        30,
+        27
       ],
       "pctOfTotal": [
-        2.3,
         4.6,
         2.8,
-        3
+        3,
+        2.2
       ],
       "fourWeekAvg": 31,
-      "weekOverWeek": 60
+      "weekOverWeek": -22
     },
     "Kyle": {
       "reportsCompleted": [
         62,
-        62,
         17,
-        34
+        34,
+        0
       ],
       "avgMinutes": [
         6,
-        6,
         7,
-        10
+        10,
+        0
       ],
       "pctOfTotal": [
-        5.6,
         6,
         2.4,
-        3.2
+        3.2,
+        0
       ],
-      "fourWeekAvg": 44,
-      "weekOverWeek": 100
+      "fourWeekAvg": 28,
+      "weekOverWeek": -100
     },
     "Marina": {
       "reportsCompleted": [
-        100,
         150,
         53,
-        109
+        109,
+        122
       ],
       "avgMinutes": [
-        18,
         17,
         19,
-        18
+        18,
+        17
       ],
       "pctOfTotal": [
-        9,
         14.5,
         7.4,
-        10.1
+        10.1,
+        10.8
       ],
-      "fourWeekAvg": 103,
-      "weekOverWeek": 106
+      "fourWeekAvg": 109,
+      "weekOverWeek": 12
     },
     "Marta": {
       "reportsCompleted": [
-        71,
         44,
         47,
-        77
+        77,
+        106
       ],
       "avgMinutes": [
         11,
         11,
-        11,
-        12
+        12,
+        9
       ],
       "pctOfTotal": [
-        6.4,
         4.3,
         6.5,
-        7.2
+        7.2,
+        9.4
       ],
-      "fourWeekAvg": 60,
-      "weekOverWeek": 64
+      "fourWeekAvg": 69,
+      "weekOverWeek": 38
     },
     "Meghan": {
       "reportsCompleted": [
-        52,
         40,
         2,
-        25
+        25,
+        39
       ],
       "avgMinutes": [
-        12,
         17,
         0,
-        20
+        20,
+        13
       ],
       "pctOfTotal": [
-        4.7,
         3.9,
         0.3,
-        2.3
+        2.3,
+        3.5
       ],
-      "fourWeekAvg": 30,
-      "weekOverWeek": 1150
+      "fourWeekAvg": 27,
+      "weekOverWeek": 56
     },
     "Nicole": {
       "reportsCompleted": [
-        23,
         21,
         31,
-        19
+        19,
+        29
       ],
       "avgMinutes": [
-        40,
         49,
         24,
-        31
+        31,
+        26
       ],
       "pctOfTotal": [
-        2.1,
         2,
         4.3,
-        1.8
+        1.8,
+        2.6
       ],
-      "fourWeekAvg": 24,
-      "weekOverWeek": -39
+      "fourWeekAvg": 25,
+      "weekOverWeek": 53
     },
     "Rose": {
       "reportsCompleted": [
         22,
-        22,
         18,
-        22
+        22,
+        34
       ],
       "avgMinutes": [
-        10,
         33,
         3,
-        30
+        30,
+        7
       ],
       "pctOfTotal": [
-        2,
         2.1,
         2.5,
-        2
+        2,
+        3
       ],
-      "fourWeekAvg": 21,
-      "weekOverWeek": 22
+      "fourWeekAvg": 24,
+      "weekOverWeek": 55
     },
     "Steve": {
       "reportsCompleted": [
         89,
-        89,
         40,
-        79
+        79,
+        82
       ],
       "avgMinutes": [
         6,
@@ -643,13 +643,13 @@
         6
       ],
       "pctOfTotal": [
-        8,
         8.6,
         5.5,
+        7.3,
         7.3
       ],
-      "fourWeekAvg": 74,
-      "weekOverWeek": 98
+      "fourWeekAvg": 73,
+      "weekOverWeek": 4
     },
     "Susan": {
       "reportsCompleted": [
@@ -675,25 +675,25 @@
     },
     "Terry": {
       "reportsCompleted": [
-        34,
         35,
         24,
-        30
+        30,
+        22
       ],
       "avgMinutes": [
-        44,
         43,
         45,
-        57
+        57,
+        55
       ],
       "pctOfTotal": [
-        3.1,
         3.4,
         3.3,
-        2.8
+        2.8,
+        1.9
       ],
-      "fourWeekAvg": 31,
-      "weekOverWeek": 25
+      "fourWeekAvg": 28,
+      "weekOverWeek": -27
     }
   },
   "utilization": {
@@ -726,12 +726,12 @@
           "avgDesignTime": 103.1
         },
         {
-          "totalRequests": 22,
-          "totalReports": 112,
-          "totalDesigns": 19,
-          "avgRequestTime": 76.5,
-          "avgReportTime": 15,
-          "avgDesignTime": 96.9
+          "totalRequests": 13,
+          "totalReports": 173,
+          "totalDesigns": 11,
+          "avgRequestTime": 125.3,
+          "avgReportTime": 9.4,
+          "avgDesignTime": 115.1
         }
       ]
     },
@@ -764,12 +764,12 @@
           "avgDesignTime": 94
         },
         {
-          "totalRequests": 51,
-          "totalReports": 51,
-          "totalDesigns": 16,
-          "avgRequestTime": 10.8,
-          "avgReportTime": 10.8,
-          "avgDesignTime": 32.7
+          "totalRequests": 53,
+          "totalReports": 75,
+          "totalDesigns": 21,
+          "avgRequestTime": 5.7,
+          "avgReportTime": 4,
+          "avgDesignTime": 86.4
         }
       ]
     },
@@ -803,11 +803,11 @@
         },
         {
           "totalRequests": 12,
-          "totalReports": 48,
-          "totalDesigns": 10,
-          "avgRequestTime": 101.1,
-          "avgReportTime": 25.3,
-          "avgDesignTime": 96.6
+          "totalReports": 52,
+          "totalDesigns": 7,
+          "avgRequestTime": 98.4,
+          "avgReportTime": 22.7,
+          "avgDesignTime": 68.4
         }
       ]
     },
@@ -840,12 +840,12 @@
           "avgDesignTime": 70.5
         },
         {
-          "totalRequests": 19,
-          "totalReports": 85,
-          "totalDesigns": 15,
-          "avgRequestTime": 93.8,
-          "avgReportTime": 21,
-          "avgDesignTime": 103
+          "totalRequests": 20,
+          "totalReports": 77,
+          "totalDesigns": 16,
+          "avgRequestTime": 84,
+          "avgReportTime": 21.8,
+          "avgDesignTime": 84.9
         }
       ]
     },
@@ -878,12 +878,12 @@
           "avgDesignTime": 72.8
         },
         {
-          "totalRequests": 18,
-          "totalReports": 142,
-          "totalDesigns": 13,
-          "avgRequestTime": 87,
-          "avgReportTime": 11,
-          "avgDesignTime": 78.7
+          "totalRequests": 21,
+          "totalReports": 109,
+          "totalDesigns": 15,
+          "avgRequestTime": 94.1,
+          "avgReportTime": 18.1,
+          "avgDesignTime": 101.3
         }
       ]
     },
@@ -954,12 +954,12 @@
           "avgDesignTime": 50.6
         },
         {
-          "totalRequests": 10,
-          "totalReports": 99,
-          "totalDesigns": 8,
-          "avgRequestTime": 84,
-          "avgReportTime": 8.5,
-          "avgDesignTime": 106.6
+          "totalRequests": 13,
+          "totalReports": 96,
+          "totalDesigns": 6,
+          "avgRequestTime": 81.9,
+          "avgReportTime": 11.1,
+          "avgDesignTime": 91.9
         }
       ]
     },
@@ -992,12 +992,12 @@
           "avgDesignTime": 56.1
         },
         {
-          "totalRequests": 10,
-          "totalReports": 32,
-          "totalDesigns": 8,
-          "avgRequestTime": 96.5,
-          "avgReportTime": 30.2,
-          "avgDesignTime": 66.9
+          "totalRequests": 8,
+          "totalReports": 25,
+          "totalDesigns": 5,
+          "avgRequestTime": 85.6,
+          "avgReportTime": 27.4,
+          "avgDesignTime": 92.1
         }
       ]
     },
@@ -1030,12 +1030,12 @@
           "avgDesignTime": 70.7
         },
         {
-          "totalRequests": 9,
-          "totalReports": 34,
-          "totalDesigns": 8,
-          "avgRequestTime": 39.8,
-          "avgReportTime": 10.5,
-          "avgDesignTime": 70
+          "totalRequests": 0,
+          "totalReports": 0,
+          "totalDesigns": 0,
+          "avgRequestTime": 0,
+          "avgReportTime": 0,
+          "avgDesignTime": 0
         }
       ]
     },
@@ -1068,12 +1068,12 @@
           "avgDesignTime": 79.7
         },
         {
-          "totalRequests": 55,
-          "totalReports": 109,
-          "totalDesigns": 33,
-          "avgRequestTime": 37.3,
-          "avgReportTime": 18.8,
-          "avgDesignTime": 82
+          "totalRequests": 40,
+          "totalReports": 122,
+          "totalDesigns": 34,
+          "avgRequestTime": 53.3,
+          "avgReportTime": 17.5,
+          "avgDesignTime": 115.1
         }
       ]
     },
@@ -1106,12 +1106,12 @@
           "avgDesignTime": 78.1
         },
         {
-          "totalRequests": 24,
-          "totalReports": 79,
-          "totalDesigns": 17,
-          "avgRequestTime": 21,
+          "totalRequests": 27,
+          "totalReports": 82,
+          "totalDesigns": 12,
+          "avgRequestTime": 19,
           "avgReportTime": 0,
-          "avgDesignTime": 85
+          "avgDesignTime": 105
         }
       ]
     },
@@ -1144,12 +1144,12 @@
           "avgDesignTime": 60.4
         },
         {
-          "totalRequests": 18,
-          "totalReports": 30,
-          "totalDesigns": 17,
-          "avgRequestTime": 96,
-          "avgReportTime": 57.6,
-          "avgDesignTime": 85.4
+          "totalRequests": 13,
+          "totalReports": 22,
+          "totalDesigns": 11,
+          "avgRequestTime": 94.1,
+          "avgReportTime": 55.6,
+          "avgDesignTime": 110.3
         }
       ]
     },
@@ -1182,12 +1182,12 @@
           "avgDesignTime": 97.5
         },
         {
-          "totalRequests": 23,
-          "totalReports": 40,
-          "totalDesigns": 16,
-          "avgRequestTime": 31.9,
-          "avgReportTime": 18.3,
-          "avgDesignTime": 101.9
+          "totalRequests": 21,
+          "totalReports": 39,
+          "totalDesigns": 19,
+          "avgRequestTime": 42.7,
+          "avgReportTime": 23,
+          "avgDesignTime": 126.7
         }
       ]
     },
@@ -1220,12 +1220,12 @@
           "avgDesignTime": 70.6
         },
         {
-          "totalRequests": 21,
-          "totalReports": 39,
-          "totalDesigns": 20,
-          "avgRequestTime": 53.4,
-          "avgReportTime": 28.7,
-          "avgDesignTime": 101.1
+          "totalRequests": 16,
+          "totalReports": 23,
+          "totalDesigns": 10,
+          "avgRequestTime": 48.3,
+          "avgReportTime": 33.6,
+          "avgDesignTime": 96.4
         }
       ]
     },
@@ -1258,12 +1258,12 @@
           "avgDesignTime": 63.6
         },
         {
-          "totalRequests": 23,
-          "totalReports": 33,
-          "totalDesigns": 19,
-          "avgRequestTime": 38.1,
-          "avgReportTime": 26.6,
-          "avgDesignTime": 48.2
+          "totalRequests": 15,
+          "totalReports": 26,
+          "totalDesigns": 9,
+          "avgRequestTime": 48.8,
+          "avgReportTime": 28.1,
+          "avgDesignTime": 59.4
         }
       ]
     },
@@ -1296,12 +1296,12 @@
           "avgDesignTime": 79.2
         },
         {
-          "totalRequests": 41,
-          "totalReports": 77,
-          "totalDesigns": 33,
-          "avgRequestTime": 22.7,
-          "avgReportTime": 12.1,
-          "avgDesignTime": 87.5
+          "totalRequests": 44,
+          "totalReports": 106,
+          "totalDesigns": 40,
+          "avgRequestTime": 22,
+          "avgReportTime": 9.1,
+          "avgDesignTime": 79.5
         }
       ]
     },
@@ -1335,11 +1335,11 @@
         },
         {
           "totalRequests": 14,
-          "totalReports": 25,
+          "totalReports": 39,
           "totalDesigns": 8,
-          "avgRequestTime": 35.9,
-          "avgReportTime": 20.1,
-          "avgDesignTime": 72.3
+          "avgRequestTime": 38.1,
+          "avgReportTime": 13.7,
+          "avgDesignTime": 131.6
         }
       ]
     },
@@ -1372,12 +1372,12 @@
           "avgDesignTime": 73.2
         },
         {
-          "totalRequests": 10,
-          "totalReports": 19,
-          "totalDesigns": 10,
-          "avgRequestTime": 60.7,
-          "avgReportTime": 31.9,
-          "avgDesignTime": 86.9
+          "totalRequests": 8,
+          "totalReports": 29,
+          "totalDesigns": 8,
+          "avgRequestTime": 95.4,
+          "avgReportTime": 26.3,
+          "avgDesignTime": 89.7
         }
       ]
     },
@@ -1410,12 +1410,12 @@
           "avgDesignTime": 83
         },
         {
-          "totalRequests": 13,
-          "totalReports": 22,
+          "totalRequests": 12,
+          "totalReports": 34,
           "totalDesigns": 12,
-          "avgRequestTime": 153.4,
-          "avgReportTime": 90.7,
-          "avgDesignTime": 115.3
+          "avgRequestTime": 191.1,
+          "avgReportTime": 67.5,
+          "avgDesignTime": 73.7
         }
       ]
     }
